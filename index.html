@@ -1,87 +1,21 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MK EasyHand</title>
-
-  <style>
-    body { font-family: Arial, sans-serif; background:#f2f2f2; margin:0; padding:20px; }
-    h1 { margin:0 0 12px 0; font-size:22px; }
-    .box { background:#fff; padding:15px; border-radius:10px; margin-bottom:15px; }
-    .seat { font-weight:bold; margin-bottom:6px; }
-    .line { display:flex; align-items:center; gap:8px; margin:4px 0; }
-    .suit { width:18px; }
-    input { flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; font-size:14px; }
-    button { padding:10px 14px; font-size:16px; border:none; border-radius:10px; background:#1976d2; color:white; cursor:pointer; }
-    button:active { background:#0f4fa8; }
-    textarea { width:100%; height:140px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
-    .ok { color:#0a7a2f; font-weight:bold; }
-    .bad { color:#b00020; font-weight:bold; }
-    .debug { margin-top:8px; font-size:12px; color:#333; white-space:pre-wrap; }
-  </style>
-</head>
-<body>
-
-<h1>MK EasyHand – Manual → LIN/PBN</h1>
-
-<div class="box">
-  <div><b>Inserisci mano (manuale)</b> <span style="color:#666">(1 riga per seme, usa 10 oppure T)</span></div>
-</div>
-
-<div class="box">
-  <div class="seat">NORD</div>
-  <div class="line"><span class="suit">♠</span><input id="nS" placeholder="AJ542"></div>
-  <div class="line"><span class="suit">♥</span><input id="nH" placeholder="K6543"></div>
-  <div class="line"><span class="suit">♦</span><input id="nD" placeholder="64"></div>
-  <div class="line"><span class="suit">♣</span><input id="nC" placeholder="9"></div>
-</div>
-
-<div class="box">
-  <div class="seat">EST</div>
-  <div class="line"><span class="suit">♠</span><input id="eS" placeholder="973"></div>
-  <div class="line"><span class="suit">♥</span><input id="eH" placeholder="10987"></div>
-  <div class="line"><span class="suit">♦</span><input id="eD" placeholder="8"></div>
-  <div class="line"><span class="suit">♣</span><input id="eC" placeholder="AJ1053"></div>
-</div>
-
-<div class="box">
-  <div class="seat">SUD</div>
-  <div class="line"><span class="suit">♠</span><input id="sS" placeholder="K106"></div>
-  <div class="line"><span class="suit">♥</span><input id="sH" placeholder="AQ"></div>
-  <div class="line"><span class="suit">♦</span><input id="sD" placeholder="102"></div>
-  <div class="line"><span class="suit">♣</span><input id="sC" placeholder="KQ7642"></div>
-</div>
-
-<div class="box">
-  <div class="seat">OVEST</div>
-  <div class="line"><span class="suit">♠</span><input id="wS" placeholder="Q8"></div>
-  <div class="line"><span class="suit">♥</span><input id="wH" placeholder="J2"></div>
-  <div class="line"><span class="suit">♦</span><input id="wD" placeholder="AKQJ9753"></div>
-  <div class="line"><span class="suit">♣</span><input id="wC" placeholder="8"></div>
-
-  <div style="margin-top:12px;">
-    <button id="genBtn" type="button">Genera LIN / PBN (con validazione)</button>
-    <span id="genMsg" style="margin-left:10px;"></span>
-    <div id="debug" class="debug"></div>
-  </div>
-</div>
-
-<div class="box">
-  <b>Output LIN</b>
-  <textarea id="outLIN" readonly></textarea>
-</div>
-
-<div class="box">
-  <b>Output PBN</b>
-  <textarea id="outPBN" readonly></textarea>
-</div>
-
 <script>
   const RANKS = "AKQJT98765432";
   const HCP = {A:4, K:3, Q:2, J:1};
 
-  const $ = (id) => document.getElementById(id);
+  // prende l'input "giusto": se ci sono ID duplicati, usa quello visibile
+  function pickVisibleById(id){
+    const list = document.querySelectorAll(`#${CSS.escape(id)}`);
+    if(!list || list.length === 0) return { el:null, count:0 };
+
+    // preferisci elemento visibile (offsetParent != null) e con dimensioni > 0
+    for(let i=list.length-1; i>=0; i--){
+      const el = list[i];
+      const visible = (el.offsetParent !== null) && (el.getBoundingClientRect().width > 0);
+      if(visible) return { el, count:list.length };
+    }
+    // fallback: ultimo
+    return { el:list[list.length-1], count:list.length };
+  }
 
   function normRanks(x){
     return (x || "")
@@ -90,13 +24,33 @@
       .replace(/[^AKQJT98765432]/g,"");
   }
 
-  function readHands(){
-    const g = (id) => normRanks($(id).value);
+  function getVal(id){
+    const p = pickVisibleById(id);
     return {
-      N: { S:g("nS"), H:g("nH"), D:g("nD"), C:g("nC") },
-      E: { S:g("eS"), H:g("eH"), D:g("eD"), C:g("eC") },
-      S: { S:g("sS"), H:g("sH"), D:g("sD"), C:g("sC") },
-      W: { S:g("wS"), H:g("wH"), D:g("wD"), C:g("wC") }
+      v: p.el ? normRanks(p.el.value) : "",
+      count: p.count
+    };
+  }
+
+  function readHands(){
+    const nS = getVal("nS"), nH = getVal("nH"), nD = getVal("nD"), nC = getVal("nC");
+    const eS = getVal("eS"), eH = getVal("eH"), eD = getVal("eD"), eC = getVal("eC");
+    const sS = getVal("sS"), sH = getVal("sH"), sD = getVal("sD"), sC = getVal("sC");
+    const wS = getVal("wS"), wH = getVal("wH"), wD = getVal("wD"), wC = getVal("wC");
+
+    return {
+      hands: {
+        N: { S:nS.v, H:nH.v, D:nD.v, C:nC.v },
+        E: { S:eS.v, H:eH.v, D:eD.v, C:eC.v },
+        S: { S:sS.v, H:sH.v, D:sD.v, C:sC.v },
+        W: { S:wS.v, H:wH.v, D:wD.v, C:wC.v }
+      },
+      counts: {
+        nS:nS.count, nH:nH.count, nD:nD.count, nC:nC.count,
+        eS:eS.count, eH:eH.count, eD:eD.count, eC:eC.count,
+        sS:sS.count, sH:sH.count, sD:sD.count, sC:sC.count,
+        wS:wS.count, wH:wH.count, wD:wD.count, wC:wC.count
+      }
     };
   }
 
@@ -159,37 +113,42 @@
     return `pn|N,E,S,W|sv|${vul}|bd|${board}|md|${dealerIdx}${Nraw},${Wraw},${Eraw},${Sraw}|`;
   }
 
-  function hcpOf(ranks){
-    let s = 0;
-    for(const r of ranks) s += (HCP[r] || 0);
-    return s;
-  }
-  function seatHCP(h){ return hcpOf(h.S)+hcpOf(h.H)+hcpOf(h.D)+hcpOf(h.C); }
+  const genBtn = document.getElementById("genBtn");
+  const genMsg = document.getElementById("genMsg");
+  const debug = document.getElementById("debug");
+  const outLIN = document.getElementById("outLIN");
+  const outPBN = document.getElementById("outPBN");
 
-  $("genBtn").addEventListener("click", () => {
-    const hands = readHands();
+  genBtn.addEventListener("click", (e) => {
+    e.preventDefault();   // evita submit/reset
+    e.stopPropagation();
 
-    // DEBUG: mostra cosa sta leggendo davvero
-    $("debug").textContent =
+    const { hands, counts } = readHands();
+
+    // DEBUG: mostra valori + quanti duplicati ID ci sono
+    debug.textContent =
       `DEBUG LETTURA:\n` +
       `N ♠=${hands.N.S} ♥=${hands.N.H} ♦=${hands.N.D} ♣=${hands.N.C}\n` +
       `E ♠=${hands.E.S} ♥=${hands.E.H} ♦=${hands.E.D} ♣=${hands.E.C}\n` +
       `S ♠=${hands.S.S} ♥=${hands.S.H} ♦=${hands.S.D} ♣=${hands.S.C}\n` +
-      `W ♠=${hands.W.S} ♥=${hands.W.H} ♦=${hands.W.D} ♣=${hands.W.C}\n`;
+      `W ♠=${hands.W.S} ♥=${hands.W.H} ♦=${hands.W.D} ♣=${hands.W.C}\n\n` +
+      `ID duplicati (se >1 è il problema):\n` +
+      `nS=${counts.nS} nH=${counts.nH} nD=${counts.nD} nC=${counts.nC}\n` +
+      `eS=${counts.eS} eH=${counts.eH} eD=${counts.eD} eC=${counts.eC}\n` +
+      `sS=${counts.sS} sH=${counts.sH} sD=${counts.sD} sC=${counts.sC}\n` +
+      `wS=${counts.wS} wH=${counts.wH} wD=${counts.wD} wC=${counts.wC}\n`;
 
     const val = validateDeal(hands);
     if(!val.ok){
-      $("genMsg").innerHTML = `<span class="bad">Validazione KO (tot=${val.total})</span>`;
-      $("outLIN").value = "";
-      $("outPBN").value = "";
+      genMsg.innerHTML = `<span class="bad">Validazione KO (tot=${val.total})</span>`;
+      outLIN.value = "";
+      outPBN.value = "";
       return;
     }
 
-    $("genMsg").innerHTML = `<span class="ok">Validazione OK ✅</span>`;
+    genMsg.innerHTML = `<span class="ok">Validazione OK ✅</span>`;
 
-    // board/dealer/vul base (poi li agganciamo allo screenshot)
     const board="1", dealer="N", vul="o";
-
     const Npbn = seatPBN(hands.N.S, hands.N.H, hands.N.D, hands.N.C);
     const Epbn = seatPBN(hands.E.S, hands.E.H, hands.E.D, hands.E.C);
     const Spbn = seatPBN(hands.S.S, hands.S.H, hands.S.D, hands.S.C);
@@ -200,14 +159,7 @@
     const Sraw = seatRAW(hands.S.S, hands.S.H, hands.S.D, hands.S.C);
     const Wraw = seatRAW(hands.W.S, hands.W.H, hands.W.D, hands.W.C);
 
-    $("outPBN").value = buildPBN(board, dealer, vul, Npbn, Epbn, Spbn, Wpbn);
-    $("outLIN").value = buildLIN(board, dealer, vul, Nraw, Wraw, Eraw, Sraw);
-
-    // mini-analisi HCP
-    const hN=seatHCP(hands.N), hE=seatHCP(hands.E), hS=seatHCP(hands.S), hW=seatHCP(hands.W);
-    $("debug").textContent += `\nHCP: N=${hN} E=${hE} S=${hS} W=${hW} — NS=${hN+hS} EW=${hE+hW}\n`;
+    outPBN.value = buildPBN(board, dealer, vul, Npbn, Epbn, Spbn, Wpbn);
+    outLIN.value = buildLIN(board, dealer, vul, Nraw, Wraw, Eraw, Sraw);
   });
 </script>
-
-</body>
-</html>
