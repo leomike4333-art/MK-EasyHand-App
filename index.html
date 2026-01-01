@@ -1,91 +1,32 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>MK EasyHand – Bridge LIN / PBN</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MK EasyHand – Bridge → LIN/PBN</title>
 
 <style>
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f2f2f2;
-  margin: 0;
-  padding: 20px;
-}
-
-h1 {
-  margin-top: 0;
-}
-
-.box {
-  background: #ffffff;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 15px;
-}
-
-.seat {
-  font-weight: bold;
-  margin-bottom: 6px;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 4px 0;
-}
-
-.row span {
-  width: 20px;
-}
-
-input {
-  flex: 1;
-  padding: 6px;
-  font-size: 14px;
-}
-
-button {
-  padding: 10px 16px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background: #1976d2;
-  color: #ffffff;
-  cursor: pointer;
-}
-
-button:active {
-  background: #0f4fa8;
-}
-
-textarea {
-  width: 100%;
-  height: 130px;
-  font-family: monospace;
-  font-size: 13px;
-}
-
-.ok {
-  color: green;
-  font-weight: bold;
-}
-
-.bad {
-  color: red;
-  font-weight: bold;
-}
-
-#debug {
-  white-space: pre-wrap;
-  background: #f7f7f7;
-  border-radius: 8px;
-  padding: 10px;
-  font-size: 12px;
-  margin-top: 10px;
-}
+  body{font-family:Arial,Helvetica,sans-serif;background:#f2f2f2;margin:0;padding:20px}
+  h1{margin:0 0 12px 0}
+  .box{background:#fff;padding:15px;border-radius:12px;margin-bottom:14px;box-shadow:0 1px 0 rgba(0,0,0,.04)}
+  .seat{font-weight:700;margin:0 0 8px 0}
+  .row{display:flex;align-items:center;gap:10px;margin:6px 0}
+  .suit{width:22px;font-size:18px}
+  input{flex:1;padding:8px 10px;border:1px solid #cfcfcf;border-radius:10px;font-size:14px}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+  button{padding:10px 14px;border:none;border-radius:10px;background:#1976d2;color:#fff;font-size:15px;cursor:pointer}
+  button.secondary{background:#5f6368}
+  button.good{background:#0a7a2f}
+  button.warn{background:#b00020}
+  button:active{transform:translateY(1px)}
+  textarea{width:100%;height:140px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;border:1px solid #d9d9d9;border-radius:10px;padding:10px}
+  .msg{margin-left:10px;font-weight:700}
+  .ok{color:#0a7a2f}
+  .bad{color:#b00020}
+  .debug{white-space:pre-wrap;background:#f7f7f7;border:1px solid #eee;border-radius:10px;padding:10px;font-size:12px;margin-top:10px}
+  .small{color:#666;font-size:13px;line-height:1.35}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 
@@ -94,149 +35,277 @@ textarea {
 <h1>MK EasyHand – Bridge → LIN / PBN</h1>
 
 <div class="box">
-  <b>Istruzioni</b><br>
-  Inserisci una mano di bridge completa (13 carte per giocatore).<br>
-  Usa <b>10</b> oppure <b>T</b>.
-</div>
-
-<div class="box">
-  <div class="seat">NORD</div>
-  <div class="row"><span>♠</span><input id="nS"></div>
-  <div class="row"><span>♥</span><input id="nH"></div>
-  <div class="row"><span>♦</span><input id="nD"></div>
-  <div class="row"><span>♣</span><input id="nC"></div>
-</div>
-
-<div class="box">
-  <div class="seat">EST</div>
-  <div class="row"><span>♠</span><input id="eS"></div>
-  <div class="row"><span>♥</span><input id="eH"></div>
-  <div class="row"><span>♦</span><input id="eD"></div>
-  <div class="row"><span>♣</span><input id="eC"></div>
-</div>
-
-<div class="box">
-  <div class="seat">SUD</div>
-  <div class="row"><span>♠</span><input id="sS"></div>
-  <div class="row"><span>♥</span><input id="sH"></div>
-  <div class="row"><span>♦</span><input id="sD"></div>
-  <div class="row"><span>♣</span><input id="sC"></div>
-</div>
-
-<div class="box">
-  <div class="seat">OVEST</div>
-  <div class="row"><span>♠</span><input id="wS"></div>
-  <div class="row"><span>♥</span><input id="wH"></div>
-  <div class="row"><span>♦</span><input id="wD"></div>
-  <div class="row"><span>♣</span><input id="wC"></div>
-
-  <div style="margin-top:12px;">
-    <button id="genBtn" type="button">Genera LIN / PBN</button>
-    <span id="genMsg"></span>
+  <div class="small">
+    Inserisci una mano completa (13 carte per giocatore).<br>
+    Usa <b>10</b> oppure <b>T</b>. Il sistema normalizza automaticamente e controlla doppioni/mancanti.
   </div>
 
-  <div id="debug">DEBUG: pronto</div>
+  <div class="actions">
+    <button id="btnExample" class="secondary" type="button">Carica esempio</button>
+    <button id="btnClear" class="warn" type="button">Svuota tutto</button>
+    <button id="genBtn" class="good" type="button">Genera LIN / PBN (con validazione)</button>
+    <span id="genMsg" class="msg"></span>
+  </div>
+
+  <div id="debug" class="debug">DEBUG: pronto.</div>
+</div>
+
+<div class="grid">
+
+  <div class="box">
+    <div class="seat">NORD</div>
+    <div class="row"><div class="suit">♠</div><input id="nS" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♥</div><input id="nH" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♦</div><input id="nD" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♣</div><input id="nC" autocomplete="off" inputmode="text"></div>
+  </div>
+
+  <div class="box">
+    <div class="seat">EST</div>
+    <div class="row"><div class="suit">♠</div><input id="eS" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♥</div><input id="eH" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♦</div><input id="eD" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♣</div><input id="eC" autocomplete="off" inputmode="text"></div>
+  </div>
+
+  <div class="box">
+    <div class="seat">SUD</div>
+    <div class="row"><div class="suit">♠</div><input id="sS" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♥</div><input id="sH" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♦</div><input id="sD" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♣</div><input id="sC" autocomplete="off" inputmode="text"></div>
+  </div>
+
+  <div class="box">
+    <div class="seat">OVEST</div>
+    <div class="row"><div class="suit">♠</div><input id="wS" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♥</div><input id="wH" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♦</div><input id="wD" autocomplete="off" inputmode="text"></div>
+    <div class="row"><div class="suit">♣</div><input id="wC" autocomplete="off" inputmode="text"></div>
+  </div>
+
 </div>
 
 <div class="box">
-  <b>Output LIN</b>
+  <div class="seat">Output LIN</div>
   <textarea id="outLIN" readonly></textarea>
+  <div class="actions">
+    <button id="btnCopyLin" class="secondary" type="button">Copia LIN</button>
+    <button id="btnDlLin" type="button">Scarica .lin</button>
+  </div>
 </div>
 
 <div class="box">
-  <b>Output PBN</b>
+  <div class="seat">Output PBN</div>
   <textarea id="outPBN" readonly></textarea>
+  <div class="actions">
+    <button id="btnCopyPbn" class="secondary" type="button">Copia PBN</button>
+    <button id="btnDlPbn" type="button">Scarica .pbn</button>
+  </div>
 </div>
 
 <script>
-const RANKS = "AKQJT98765432";
+  const RANKS = "AKQJT98765432";
 
-function norm(txt) {
-  return (txt || "")
-    .toUpperCase()
-    .replace(/10/g, "T")
-    .replace(/[^AKQJT98765432]/g, "");
-}
+  const $ = (id) => document.getElementById(id);
 
-function v(id) {
-  return norm(document.getElementById(id).value);
-}
+  function norm(txt){
+    return (txt || "")
+      .toUpperCase()
+      .replace(/10/g, "T")
+      .replace(/[^AKQJT98765432]/g, "");
+  }
 
-function readHands() {
-  return {
-    N: { S:v("nS"), H:v("nH"), D:v("nD"), C:v("nC") },
-    E: { S:v("eS"), H:v("eH"), D:v("eD"), C:v("eC") },
-    S: { S:v("sS"), H:v("sH"), D:v("sD"), C:v("sC") },
-    W: { S:v("wS"), H:v("wH"), D:v("wD"), C:v("wC") }
-  };
-}
+  function v(id){ return norm($(id).value); }
 
-function validate(h) {
-  let seen = new Set();
-  let tot = 0;
-  let err = [];
+  function readHands(){
+    return {
+      N:{S:v("nS"),H:v("nH"),D:v("nD"),C:v("nC")},
+      E:{S:v("eS"),H:v("eH"),D:v("eD"),C:v("eC")},
+      S:{S:v("sS"),H:v("sH"),D:v("sD"),C:v("sC")},
+      W:{S:v("wS"),H:v("wH"),D:v("wD"),C:v("wC")}
+    };
+  }
 
-  for (const p of ["N","E","S","W"]) {
-    let cnt = 0;
-    for (const s of ["S","H","D","C"]) {
-      for (const r of h[p][s]) {
-        tot++;
-        cnt++;
-        const k = s + r;
-        if (seen.has(k)) err.push("Doppione: " + k);
-        seen.add(k);
+  function validate(h){
+    const seen = new Set();
+    const err = [];
+    let tot = 0;
+
+    for(const p of ["N","E","S","W"]){
+      let cnt = 0;
+      for(const s of ["S","H","D","C"]){
+        for(const r of h[p][s]){
+          tot++; cnt++;
+          const key = s + r;
+          if(seen.has(key)) err.push("Doppione: " + key);
+          seen.add(key);
+        }
+      }
+      if(cnt !== 13) err.push(`Seat ${p}: ${cnt} carte (attese 13)`);
+    }
+
+    // se vuoi elenco mancanti (utile quando KO)
+    const missing = [];
+    for(const s of ["S","H","D","C"]){
+      for(const r of RANKS){
+        const key = s + r;
+        if(!seen.has(key)) missing.push(key);
       }
     }
-    if (cnt !== 13) err.push("Seat " + p + ": " + cnt + " carte");
+
+    return { ok: err.length===0 && tot===52 && missing.length===0, tot, err, missing };
   }
-  return { ok: err.length === 0 && tot === 52, tot, err };
-}
 
-document.getElementById("genBtn").addEventListener("click", function () {
+  function seatPBN(sp,he,di,cl){
+    return `${sp||"-"}.${he||"-"}.${di||"-"}.${cl||"-"}`;
+  }
+  function seatRAW(sp,he,di,cl){
+    return `${sp}${he}${di}${cl}`;
+  }
 
-  // FIX Android / WebView
-  document.activeElement && document.activeElement.blur();
+  function buildPBN(board,dealer,vul,N,E,S,W){
+    const vulPbn = (vul==="o") ? "None" : (vul==="n") ? "NS" : (vul==="e") ? "EW" : "All";
+    return `[Event "MK EasyHand"]\n[Board "${board}"]\n[Dealer "${dealer}"]\n[Vulnerable "${vulPbn}"]\n[Deal "N:${N} ${E} ${S} ${W}"]\n`;
+  }
 
-  setTimeout(() => {
+  function buildLIN(board,dealer,vul,Nraw,Wraw,Eraw,Sraw){
+    // md|<dealerIdx><N>,<W>,<E>,<S>|
+    const dealerIdx = ({S:"1",W:"2",N:"3",E:"4"})[dealer] || "3";
+    return `pn|N,E,S,W|sv|${vul}|bd|${board}|md|${dealerIdx}${Nraw},${Wraw},${Eraw},${Sraw}|`;
+  }
 
-    const h = readHands();
+  function setMsgOK(txt){ $("genMsg").innerHTML = `<span class="ok">${txt}</span>`; }
+  function setMsgKO(txt){ $("genMsg").innerHTML = `<span class="bad">${txt}</span>`; }
 
-    document.getElementById("debug").textContent =
+  function debugHands(h){
+    $("debug").textContent =
 `DEBUG LETTURA
-N ♠=${h.N.S} ♥=${h.N.H} ♦=${h.N.D} ♣=${h.N.C}
-E ♠=${h.E.S} ♥=${h.E.H} ♦=${h.E.D} ♣=${h.E.C}
-S ♠=${h.S.S} ♥=${h.S.H} ♦=${h.S.D} ♣=${h.S.C}
-W ♠=${h.W.S} ♥=${h.W.H} ♦=${h.W.D} ♣=${h.W.C}`;
+N ♠=${h.N.S}  ♥=${h.N.H}  ♦=${h.N.D}  ♣=${h.N.C}
+E ♠=${h.E.S}  ♥=${h.E.H}  ♦=${h.E.D}  ♣=${h.E.C}
+S ♠=${h.S.S}  ♥=${h.S.H}  ♦=${h.S.D}  ♣=${h.S.C}
+W ♠=${h.W.S}  ♥=${h.W.H}  ♦=${h.W.D}  ♣=${h.W.C}`;
+  }
 
-    const vld = validate(h);
+  function downloadText(filename, content){
+    const blob = new Blob([content], {type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 
-    if (!vld.ok) {
-      document.getElementById("genMsg").innerHTML =
-        `<span class="bad">Validazione KO (tot=${vld.tot})</span>`;
-      document.getElementById("outLIN").value = "";
-      document.getElementById("outPBN").value = "";
-      return;
+  async function copyToClipboard(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch(e){
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
     }
+  }
 
-    document.getElementById("genMsg").innerHTML =
-      `<span class="ok">Validazione OK</span>`;
+  function clearAll(){
+    for(const id of ["nS","nH","nD","nC","eS","eH","eD","eC","sS","sH","sD","sC","wS","wH","wD","wC"]){
+      $(id).value = "";
+    }
+    $("outLIN").value = "";
+    $("outPBN").value = "";
+    $("debug").textContent = "DEBUG: pronto.";
+    $("genMsg").textContent = "";
+  }
 
-    const N = `${h.N.S}.${h.N.H}.${h.N.D}.${h.N.C}`;
-    const E = `${h.E.S}.${h.E.H}.${h.E.D}.${h.E.C}`;
-    const S = `${h.S.S}.${h.S.H}.${h.S.D}.${h.S.C}`;
-    const W = `${h.W.S}.${h.W.H}.${h.W.D}.${h.W.C}`;
+  function loadExample(){
+    // Esempio Board 1 (quello della tua immagine)
+    $("nS").value="AJ542"; $("nH").value="K6543"; $("nD").value="64"; $("nC").value="9";
+    $("eS").value="973";   $("eH").value="10987"; $("eD").value="8";  $("eC").value="AJ1053";
+    $("sS").value="K106";  $("sH").value="AQ";    $("sD").value="102";$("sC").value="KQ7642";
+    $("wS").value="Q8";    $("wH").value="J2";    $("wD").value="AKQJ9753"; $("wC").value="8";
+    $("genMsg").textContent = "";
+  }
 
-    document.getElementById("outPBN").value =
-`[Board "1"]
-[Dealer "N"]
-[Vulnerable "None"]
-[Deal "N:${N} ${E} ${S} ${W}"]`;
+  $("btnClear").addEventListener("click", clearAll);
+  $("btnExample").addEventListener("click", loadExample);
 
-    document.getElementById("outLIN").value =
-`pn|N,E,S,W|sv|o|bd|1|md|3${h.N.S+h.N.H+h.N.D+h.N.C},${h.W.S+h.W.H+h.W.D+h.W.C},${h.E.S+h.E.H+h.E.D+h.E.C},${h.S.S+h.S.H+h.S.D+h.S.C}|`;
+  $("genBtn").addEventListener("click", (e)=>{
+    e.preventDefault();
 
-  }, 0);
-});
+    // FIX Android/WebView: forza blur prima di leggere
+    document.activeElement && document.activeElement.blur();
+
+    setTimeout(()=>{
+      const h = readHands();
+      debugHands(h);
+
+      const vld = validate(h);
+      if(!vld.ok){
+        setMsgKO(`Validazione KO (tot=${vld.tot})`);
+        $("outLIN").value = "";
+        $("outPBN").value = "";
+
+        // Dettaglio (utile per trovare l’errore)
+        const detail = [];
+        if(vld.err.length) detail.push("Problemi:\n- " + vld.err.join("\n- "));
+        if(vld.missing.length) detail.push("\nMancanti (prime 20): " + vld.missing.slice(0,20).join(" "));
+        $("debug").textContent += "\n\n" + detail.join("\n");
+        return;
+      }
+
+      setMsgOK("Validazione OK ✅");
+
+      // Per ora fissiamo i tag (poi li estraiamo dallo screenshot RealBridge)
+      const board="1", dealer="N", vul="o";
+
+      const Npbn = seatPBN(h.N.S,h.N.H,h.N.D,h.N.C);
+      const Epbn = seatPBN(h.E.S,h.E.H,h.E.D,h.E.C);
+      const Spbn = seatPBN(h.S.S,h.S.H,h.S.D,h.S.C);
+      const Wpbn = seatPBN(h.W.S,h.W.H,h.W.D,h.W.C);
+
+      const Nraw = seatRAW(h.N.S,h.N.H,h.N.D,h.N.C);
+      const Eraw = seatRAW(h.E.S,h.E.H,h.E.D,h.E.C);
+      const Sraw = seatRAW(h.S.S,h.S.H,h.S.D,h.S.C);
+      const Wraw = seatRAW(h.W.S,h.W.H,h.W.D,h.W.C);
+
+      $("outPBN").value = buildPBN(board,dealer,vul,Npbn,Epbn,Spbn,Wpbn);
+      $("outLIN").value = buildLIN(board,dealer,vul,Nraw,Wraw,Eraw,Sraw);
+    }, 0);
+  });
+
+  $("btnCopyLin").addEventListener("click", async ()=>{
+    const t = $("outLIN").value.trim();
+    if(!t) return;
+    const ok = await copyToClipboard(t);
+    $("genMsg").innerHTML = ok ? `<span class="ok">LIN copiato ✅</span>` : `<span class="bad">Copia fallita</span>`;
+  });
+
+  $("btnCopyPbn").addEventListener("click", async ()=>{
+    const t = $("outPBN").value.trim();
+    if(!t) return;
+    const ok = await copyToClipboard(t);
+    $("genMsg").innerHTML = ok ? `<span class="ok">PBN copiato ✅</span>` : `<span class="bad">Copia fallita</span>`;
+  });
+
+  $("btnDlLin").addEventListener("click", ()=>{
+    const t = $("outLIN").value.trim();
+    if(!t) return;
+    downloadText("board1.lin", t + "\n");
+  });
+
+  $("btnDlPbn").addEventListener("click", ()=>{
+    const t = $("outPBN").value.trim();
+    if(!t) return;
+    downloadText("board1.pbn", t + "\n");
+  });
 </script>
 
 </body>
