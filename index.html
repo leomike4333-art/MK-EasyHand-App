@@ -1,251 +1,148 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MK EasyHand – Manual → LIN/PBN</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MK EasyHand – Manual → LIN/PBN</title>
 
-  <style>
-    body { font-family: Arial, sans-serif; background:#f2f2f2; margin:0; padding:20px; }
-    h1 { margin:0 0 12px 0; font-size:22px; }
-    .box { background:#fff; padding:15px; border-radius:10px; margin-bottom:15px; }
-    .seat { font-weight:bold; margin-bottom:6px; }
-    .line { display:flex; align-items:center; gap:8px; margin:4px 0; }
-    .suit { width:18px; }
-    input { flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; font-size:14px; }
-    button { padding:10px 14px; font-size:16px; border:none; border-radius:10px; background:#1976d2; color:white; cursor:pointer; }
-    button:active { background:#0f4fa8; }
-    textarea { width:100%; height:140px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
-    .ok { color:#0a7a2f; font-weight:bold; }
-    .bad { color:#b00020; font-weight:bold; }
-    .muted { color:#666; }
-    .debug { margin-top:10px; font-size:12px; color:#222; white-space:pre-wrap; background:#f7f7f7; border:1px solid #eee; padding:10px; border-radius:10px; }
-  </style>
+<style>
+body { font-family: Arial, sans-serif; background:#f2f2f2; padding:20px; }
+h1 { margin-top:0; }
+.box { background:#fff; padding:15px; border-radius:10px; margin-bottom:15px; }
+.line { display:flex; align-items:center; gap:8px; margin:4px 0; }
+input { flex:1; padding:6px; }
+button { padding:10px 14px; font-size:16px; border:none; border-radius:8px; background:#1976d2; color:white; }
+textarea { width:100%; height:120px; font-family:monospace; }
+.ok { color:green; font-weight:bold; }
+.bad { color:red; font-weight:bold; }
+pre { background:#f7f7f7; padding:10px; border-radius:8px; }
+</style>
 </head>
 
 <body>
 
-<h1>MK EasyHand – Manual → LIN/PBN</h1>
+<h1>MK EasyHand – Manual → LIN / PBN</h1>
 
-<div class="box">
-  <b>Inserisci mano (manuale)</b>
-  <span class="muted">(1 riga per seme, usa <b>10</b> oppure <b>T</b>)</span>
+<div class="box"><b>NORD</b>
+<div class="line">♠ <input id="nS"></div>
+<div class="line">♥ <input id="nH"></div>
+<div class="line">♦ <input id="nD"></div>
+<div class="line">♣ <input id="nC"></div>
+</div>
+
+<div class="box"><b>EST</b>
+<div class="line">♠ <input id="eS"></div>
+<div class="line">♥ <input id="eH"></div>
+<div class="line">♦ <input id="eD"></div>
+<div class="line">♣ <input id="eC"></div>
+</div>
+
+<div class="box"><b>SUD</b>
+<div class="line">♠ <input id="sS"></div>
+<div class="line">♥ <input id="sH"></div>
+<div class="line">♦ <input id="sD"></div>
+<div class="line">♣ <input id="sC"></div>
+</div>
+
+<div class="box"><b>OVEST</b>
+<div class="line">♠ <input id="wS"></div>
+<div class="line">♥ <input id="wH"></div>
+<div class="line">♦ <input id="wD"></div>
+<div class="line">♣ <input id="wC"></div>
+
+<button id="genBtn">Genera LIN / PBN</button>
+<span id="genMsg"></span>
+
+<pre id="debug">DEBUG pronto</pre>
 </div>
 
 <div class="box">
-  <div class="seat">NORD</div>
-  <div class="line"><span class="suit">♠</span><input id="nS" placeholder="AJ542"></div>
-  <div class="line"><span class="suit">♥</span><input id="nH" placeholder="K6543"></div>
-  <div class="line"><span class="suit">♦</span><input id="nD" placeholder="64"></div>
-  <div class="line"><span class="suit">♣</span><input id="nC" placeholder="9"></div>
+<b>Output LIN</b>
+<textarea id="outLIN" readonly></textarea>
 </div>
 
 <div class="box">
-  <div class="seat">EST</div>
-  <div class="line"><span class="suit">♠</span><input id="eS" placeholder="973"></div>
-  <div class="line"><span class="suit">♥</span><input id="eH" placeholder="10987"></div>
-  <div class="line"><span class="suit">♦</span><input id="eD" placeholder="8"></div>
-  <div class="line"><span class="suit">♣</span><input id="eC" placeholder="AJ1053"></div>
-</div>
-
-<div class="box">
-  <div class="seat">SUD</div>
-  <div class="line"><span class="suit">♠</span><input id="sS" placeholder="K106"></div>
-  <div class="line"><span class="suit">♥</span><input id="sH" placeholder="AQ"></div>
-  <div class="line"><span class="suit">♦</span><input id="sD" placeholder="102"></div>
-  <div class="line"><span class="suit">♣</span><input id="sC" placeholder="KQ7642"></div>
-</div>
-
-<div class="box">
-  <div class="seat">OVEST</div>
-  <div class="line"><span class="suit">♠</span><input id="wS" placeholder="Q8"></div>
-  <div class="line"><span class="suit">♥</span><input id="wH" placeholder="J2"></div>
-  <div class="line"><span class="suit">♦</span><input id="wD" placeholder="AKQJ9753"></div>
-  <div class="line"><span class="suit">♣</span><input id="wC" placeholder="8"></div>
-
-  <div style="margin-top:12px;">
-    <button id="genBtn" type="button">Genera LIN / PBN (con validazione)</button>
-    <span id="genMsg" style="margin-left:10px;"></span>
-    <div id="debug" class="debug">DEBUG: pronto.</div>
-  </div>
-</div>
-
-<div class="box">
-  <b>Output LIN</b>
-  <textarea id="outLIN" readonly></textarea>
-</div>
-
-<div class="box">
-  <b>Output PBN</b>
-  <textarea id="outPBN" readonly></textarea>
+<b>Output PBN</b>
+<textarea id="outPBN" readonly></textarea>
 </div>
 
 <script>
-  const RANKS = "AKQJT98765432";
+const RANKS="AKQJT98765432";
 
-  const $ = (id) => document.getElementById(id);
+function norm(x){
+  return (x||"").toUpperCase().replace(/10/g,"T").replace(/[^AKQJT98765432]/g,"");
+}
 
-  // Se per qualsiasi motivo ci fossero ID duplicati, usa quello visibile
-  function pickVisibleById(id){
-    let list;
-    try {
-      list = document.querySelectorAll(`#${CSS.escape(id)}`);
-    } catch(e){
-      // fallback rarissimo
-      list = document.querySelectorAll(`[id="${id}"]`);
-    }
-    if(!list || list.length === 0) return { el:null, count:0 };
+function v(id){ return norm(document.getElementById(id).value); }
 
-    for(let i=list.length-1; i>=0; i--){
-      const el = list[i];
-      const rect = el.getBoundingClientRect();
-      const visible = (el.offsetParent !== null) && rect.width > 0 && rect.height > 0;
-      if(visible) return { el, count:list.length };
-    }
-    return { el:list[list.length-1], count:list.length };
-  }
+function readHands(){
+  return {
+    N:{S:v("nS"),H:v("nH"),D:v("nD"),C:v("nC")},
+    E:{S:v("eS"),H:v("eH"),D:v("eD"),C:v("eC")},
+    S:{S:v("sS"),H:v("sH"),D:v("sD"),C:v("sC")},
+    W:{S:v("wS"),H:v("wH"),D:v("wD"),C:v("wC")}
+  };
+}
 
-  function normRanks(x){
-    return (x || "")
-      .toUpperCase()
-      .replace(/10/g,"T")
-      .replace(/[^AKQJT98765432]/g,"");
-  }
-
-  function getVal(id){
-    const p = pickVisibleById(id);
-    return {
-      v: p.el ? normRanks(p.el.value) : "",
-      count: p.count
-    };
-  }
-
-  function readHands(){
-    const nS = getVal("nS"), nH = getVal("nH"), nD = getVal("nD"), nC = getVal("nC");
-    const eS = getVal("eS"), eH = getVal("eH"), eD = getVal("eD"), eC = getVal("eC");
-    const sS = getVal("sS"), sH = getVal("sH"), sD = getVal("sD"), sC = getVal("sC");
-    const wS = getVal("wS"), wH = getVal("wH"), wD = getVal("wD"), wC = getVal("wC");
-
-    return {
-      hands: {
-        N: { S:nS.v, H:nH.v, D:nD.v, C:nC.v },
-        E: { S:eS.v, H:eH.v, D:eD.v, C:eC.v },
-        S: { S:sS.v, H:sH.v, D:sD.v, C:sC.v },
-        W: { S:wS.v, H:wH.v, D:wD.v, C:wC.v }
-      },
-      counts: {
-        nS:nS.count, nH:nH.count, nD:nD.count, nC:nC.count,
-        eS:eS.count, eH:eH.count, eD:eD.count, eC:eC.count,
-        sS:sS.count, sH:sH.count, sD:sD.count, sC:sC.count,
-        wS:wS.count, wH:wH.count, wD:wD.count, wC:wC.count
-      }
-    };
-  }
-
-  function validateDeal(hands){
-    const seen = new Set();
-    const problems = [];
-    let total = 0;
-
-    function add(seat, suit, ranks){
-      for(const r of ranks){
-        total++;
-        const key = suit + r;
-        if(seen.has(key)) problems.push(`Doppione: ${key} (seat ${seat})`);
-        seen.add(key);
+function validate(h){
+  let seen=new Set(), tot=0, err=[];
+  for(const p of ["N","E","S","W"]){
+    let c=0;
+    for(const s of ["S","H","D","C"]){
+      for(const r of h[p][s]){
+        tot++; c++;
+        const k=s+r;
+        if(seen.has(k)) err.push("Doppione "+k);
+        seen.add(k);
       }
     }
-
-    const perSeat = {};
-    for(const seat of ["N","E","S","W"]){
-      const h = hands[seat];
-      add(seat, "S", h.S);
-      add(seat, "H", h.H);
-      add(seat, "D", h.D);
-      add(seat, "C", h.C);
-      perSeat[seat] = h.S.length + h.H.length + h.D.length + h.C.length;
-      if(perSeat[seat] !== 13) problems.push(`Seat ${seat}: ${perSeat[seat]} carte (attese 13)`);
-    }
-
-    const missing = [];
-    for(const suit of ["S","H","D","C"]){
-      for(const r of RANKS){
-        const key = suit + r;
-        if(!seen.has(key)) missing.push(key);
-      }
-    }
-
-    const ok = (problems.length === 0 && total === 52 && missing.length === 0);
-    return { ok, total, problems, missing, perSeat };
+    if(c!==13) err.push("Seat "+p+": "+c+" carte");
   }
+  return {ok:err.length===0 && tot===52, tot, err};
+}
 
-  function seatPBN(sp, he, di, cl){
-    return `${sp || "-"}.${he || "-"}.${di || "-"}.${cl || "-"}`;
-  }
-  function seatRAW(sp, he, di, cl){
-    return `${sp}${he}${di}${cl}`;
-  }
+document.getElementById("genBtn").onclick=(e)=>{
+  e.preventDefault();
 
-  function buildPBN(board, dealer, vul, N, E, S, W){
-    const vulPbn = (vul==="o")?"None":(vul==="n")?"NS":(vul==="e")?"EW":"All";
-    return `[Event "MK EasyHand"]\n[Board "${board}"]\n[Dealer "${dealer}"]\n[Vulnerable "${vulPbn}"]\n[Deal "N:${N} ${E} ${S} ${W}"]\n`;
-  }
+  /* FIX ANDROID / WEBVIEW */
+  document.activeElement && document.activeElement.blur();
 
-  function buildLIN(board, dealer, vul, Nraw, Wraw, Eraw, Sraw){
-    const dealerIdx = ({S:"1",W:"2",N:"3",E:"4"})[dealer] || "3";
-    return `pn|N,E,S,W|sv|${vul}|bd|${board}|md|${dealerIdx}${Nraw},${Wraw},${Eraw},${Sraw}|`;
-  }
+  setTimeout(()=>{
 
-  const genBtn = $("genBtn");
-  const genMsg = $("genMsg");
-  const debug = $("debug");
-  const outLIN = $("outLIN");
-  const outPBN = $("outPBN");
+    const h=readHands();
 
-  genBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    debug.textContent=
+`DEBUG LETTURA
+N ♠=${h.N.S} ♥=${h.N.H} ♦=${h.N.D} ♣=${h.N.C}
+E ♠=${h.E.S} ♥=${h.E.H} ♦=${h.E.D} ♣=${h.E.C}
+S ♠=${h.S.S} ♥=${h.S.H} ♦=${h.S.D} ♣=${h.S.C}
+W ♠=${h.W.S} ♥=${h.W.H} ♦=${h.W.D} ♣=${h.W.C}`;
 
-    const { hands, counts } = readHands();
-
-    debug.textContent =
-      `DEBUG LETTURA:\n` +
-      `N ♠=${hands.N.S} ♥=${hands.N.H} ♦=${hands.N.D} ♣=${hands.N.C}\n` +
-      `E ♠=${hands.E.S} ♥=${hands.E.H} ♦=${hands.E.D} ♣=${hands.E.C}\n` +
-      `S ♠=${hands.S.S} ♥=${hands.S.H} ♦=${hands.S.D} ♣=${hands.S.C}\n` +
-      `W ♠=${hands.W.S} ♥=${hands.W.H} ♦=${hands.W.D} ♣=${hands.W.C}\n\n` +
-      `ID duplicati (se >1 è il problema):\n` +
-      `nS=${counts.nS} nH=${counts.nH} nD=${counts.nD} nC=${counts.nC}\n` +
-      `eS=${counts.eS} eH=${counts.eH} eD=${counts.eD} eC=${counts.eC}\n` +
-      `sS=${counts.sS} sH=${counts.sH} sD=${counts.sD} sC=${counts.sC}\n` +
-      `wS=${counts.wS} wH=${counts.wH} wD=${counts.wD} wC=${counts.wC}\n`;
-
-    const val = validateDeal(hands);
-    if(!val.ok){
-      genMsg.innerHTML = `<span class="bad">Validazione KO (tot=${val.total})</span>`;
-      outLIN.value = "";
-      outPBN.value = "";
+    const vld=validate(h);
+    if(!vld.ok){
+      genMsg.innerHTML=`<span class="bad">Validazione KO (tot=${vld.tot})</span>`;
+      outLIN.value=""; outPBN.value="";
       return;
     }
 
-    genMsg.innerHTML = `<span class="ok">Validazione OK ✅</span>`;
+    genMsg.innerHTML=`<span class="ok">Validazione OK</span>`;
 
-    // per ora fisso (poi li agganciamo allo screenshot)
-    const board="1", dealer="N", vul="o";
+    const N=`${h.N.S}.${h.N.H}.${h.N.D}.${h.N.C}`;
+    const E=`${h.E.S}.${h.E.H}.${h.E.D}.${h.E.C}`;
+    const S=`${h.S.S}.${h.S.H}.${h.S.D}.${h.S.C}`;
+    const W=`${h.W.S}.${h.W.H}.${h.W.D}.${h.W.C}`;
 
-    const Npbn = seatPBN(hands.N.S, hands.N.H, hands.N.D, hands.N.C);
-    const Epbn = seatPBN(hands.E.S, hands.E.H, hands.E.D, hands.E.C);
-    const Spbn = seatPBN(hands.S.S, hands.S.H, hands.S.D, hands.S.C);
-    const Wpbn = seatPBN(hands.W.S, hands.W.H, hands.W.D, hands.W.C);
+    outPBN.value=
+`[Board "1"]
+[Dealer "N"]
+[Vulnerable "None"]
+[Deal "N:${N} ${E} ${S} ${W}"]`;
 
-    const Nraw = seatRAW(hands.N.S, hands.N.H, hands.N.D, hands.N.C);
-    const Eraw = seatRAW(hands.E.S, hands.E.H, hands.E.D, hands.E.C);
-    const Sraw = seatRAW(hands.S.S, hands.S.H, hands.S.D, hands.S.C);
-    const Wraw = seatRAW(hands.W.S, hands.W.H, hands.W.D, hands.W.C);
+    outLIN.value=
+`pn|N,E,S,W|sv|o|bd|1|md|3${h.N.S+h.N.H+h.N.D+h.N.C},${h.W.S+h.W.H+h.W.D+h.W.C},${h.E.S+h.E.H+h.E.D+h.E.C},${h.S.S+h.S.H+h.S.D+h.S.C}|`;
 
-    outPBN.value = buildPBN(board, dealer, vul, Npbn, Epbn, Spbn, Wpbn);
-    outLIN.value = buildLIN(board, dealer, vul, Nraw, Wraw, Eraw, Sraw);
-  });
+  },0);
+};
 </script>
 
 </body>
