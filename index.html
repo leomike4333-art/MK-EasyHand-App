@@ -1,130 +1,69 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MK EasyHand – RealBridge</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MK EasyHand</title>
 
   <style>
     body { font-family: Arial, sans-serif; background:#f2f2f2; margin:0; padding:20px; }
-    h1 { font-size:22px; margin-top:0; }
+    h1 { margin:0 0 12px 0; font-size:22px; }
     .box { background:#fff; padding:15px; border-radius:10px; margin-bottom:15px; }
-    textarea { width:100%; height:140px; font-family: monospace; font-size:14px; }
-    button { padding:10px 15px; font-size:16px; border-radius:8px; border:none; background:#1976d2; color:#fff; cursor:pointer; }
+    .seat { font-weight:bold; margin-bottom:6px; }
+    .line { display:flex; align-items:center; gap:8px; margin:4px 0; }
+    .suit { width:18px; }
+    input { flex:1; padding:8px; border-radius:8px; border:1px solid #ccc; font-size:14px; }
+    button { padding:10px 14px; font-size:16px; border:none; border-radius:10px; background:#1976d2; color:white; cursor:pointer; }
     button:active { background:#0f4fa8; }
-    button.gray { background:#555; }
-    button.gray:active { background:#333; }
-    img { max-width:100%; border-radius:10px; border:1px solid #ddd; }
-    input { margin:3px 0; padding:6px; border-radius:6px; border:1px solid #ccc; }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .pill { display:inline-block; padding:3px 8px; border-radius:999px; background:#eef; font-size:12px; color:#334; }
+    textarea { width:100%; height:140px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size:13px; }
     .ok { color:#0a7a2f; font-weight:bold; }
     .bad { color:#b00020; font-weight:bold; }
-    small { color:#666; }
+    .debug { margin-top:8px; font-size:12px; color:#333; white-space:pre-wrap; }
   </style>
-
-  <!-- OCR (solo per header Board/Dealer/Vul) -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
-
 <body>
-<h1>MK EasyHand – RealBridge (MVP)</h1>
+
+<h1>MK EasyHand – Manual → LIN/PBN</h1>
 
 <div class="box">
-  <b>Obiettivo:</b> inserisci la mano manualmente (4 box) → ottieni LIN/PBN con <b>validazione 52 carte</b>.
-  In più puoi caricare uno screenshot RealBridge e far leggere automaticamente <b>Board/Dealer/Vul</b>.
+  <div><b>Inserisci mano (manuale)</b> <span style="color:#666">(1 riga per seme, usa 10 oppure T)</span></div>
 </div>
 
 <div class="box">
-  <b>Test rapido</b>
-  <textarea readonly>
-Board 1
-Dealer N
-None Vul
-
-N: ♠AJ542 ♥K6543 ♦64 ♣9
-E: ♠973 ♥10987 ♦8 ♣AJ1053
-S: ♠K106 ♥AQ ♦102 ♣KQ7642
-W: ♠Q8 ♥J2 ♦AKQJ9753 ♣8
-  </textarea>
-</div>
-
-<div class="row" style="margin-bottom:15px;">
-  <button onclick="alert('Perfetto! L’app è viva 👍')">Test APP</button>
-  <span class="pill">v1.1</span>
-</div>
-
-<hr style="margin:20px 0; border:none; border-top:1px solid #ddd;">
-
-<div class="box">
-  <b>Carica uno screenshot RealBridge</b><br><br>
-  <div class="row">
-    <input id="imgInput" type="file" accept="image/*">
-    <button id="readHeaderBtn" class="gray" type="button">Leggi Board/Dealer/Vul dallo screenshot</button>
-  </div>
-  <div id="imgMsg" style="margin-top:8px;"></div>
+  <div class="seat">NORD</div>
+  <div class="line"><span class="suit">♠</span><input id="nS" placeholder="AJ542"></div>
+  <div class="line"><span class="suit">♥</span><input id="nH" placeholder="K6543"></div>
+  <div class="line"><span class="suit">♦</span><input id="nD" placeholder="64"></div>
+  <div class="line"><span class="suit">♣</span><input id="nC" placeholder="9"></div>
 </div>
 
 <div class="box">
-  <b>Anteprima screenshot</b><br><br>
-  <img id="imgPreview" style="display:none;">
+  <div class="seat">EST</div>
+  <div class="line"><span class="suit">♠</span><input id="eS" placeholder="973"></div>
+  <div class="line"><span class="suit">♥</span><input id="eH" placeholder="10987"></div>
+  <div class="line"><span class="suit">♦</span><input id="eD" placeholder="8"></div>
+  <div class="line"><span class="suit">♣</span><input id="eC" placeholder="AJ1053"></div>
 </div>
 
 <div class="box">
-  <b>Dati board (manuale o da screenshot)</b><br>
-  <small>Se premi “Leggi…” si riempiono da soli (se OCR riesce). Altrimenti inseriscili tu.</small><br><br>
-  <div class="row">
-    <label>Board <input id="boardNo" style="width:90px" placeholder="es: 2"></label>
-    <label>Dealer
-      <select id="dealer">
-        <option value="N">N</option>
-        <option value="E">E</option>
-        <option value="S">S</option>
-        <option value="W">W</option>
-      </select>
-    </label>
-    <label>Vul
-      <select id="vul">
-        <option value="o">None</option>
-        <option value="n">NS</option>
-        <option value="e">EW</option>
-        <option value="b">All</option>
-      </select>
-    </label>
-  </div>
-  <div id="headerStatus" style="margin-top:8px;"></div>
+  <div class="seat">SUD</div>
+  <div class="line"><span class="suit">♠</span><input id="sS" placeholder="K106"></div>
+  <div class="line"><span class="suit">♥</span><input id="sH" placeholder="AQ"></div>
+  <div class="line"><span class="suit">♦</span><input id="sD" placeholder="102"></div>
+  <div class="line"><span class="suit">♣</span><input id="sC" placeholder="KQ7642"></div>
 </div>
 
 <div class="box">
-  <b>Inserisci mano (manuale)</b> <small>(1 riga per seme, usa 10 oppure T)</small><br><br>
+  <div class="seat">OVEST</div>
+  <div class="line"><span class="suit">♠</span><input id="wS" placeholder="Q8"></div>
+  <div class="line"><span class="suit">♥</span><input id="wH" placeholder="J2"></div>
+  <div class="line"><span class="suit">♦</span><input id="wD" placeholder="AKQJ9753"></div>
+  <div class="line"><span class="suit">♣</span><input id="wC" placeholder="8"></div>
 
-  <b>NORD</b><br>
-  ♠ <input id="nS" placeholder="AJ542"><br>
-  ♥ <input id="nH" placeholder="K6543"><br>
-  ♦ <input id="nD" placeholder="64"><br>
-  ♣ <input id="nC" placeholder="9"><br><br>
-
-  <b>EST</b><br>
-  ♠ <input id="eS" placeholder="973"><br>
-  ♥ <input id="eH" placeholder="10987"><br>
-  ♦ <input id="eD" placeholder="8"><br>
-  ♣ <input id="eC" placeholder="AJ1053"><br><br>
-
-  <b>SUD</b><br>
-  ♠ <input id="sS" placeholder="K106"><br>
-  ♥ <input id="sH" placeholder="AQ"><br>
-  ♦ <input id="sD" placeholder="102"><br>
-  ♣ <input id="sC" placeholder="KQ7642"><br><br>
-
-  <b>OVEST</b><br>
-  ♠ <input id="wS" placeholder="Q8"><br>
-  ♥ <input id="wH" placeholder="J2"><br>
-  ♦ <input id="wD" placeholder="AKQJ9753"><br>
-  ♣ <input id="wC" placeholder="8"><br><br>
-
-  <div class="row">
+  <div style="margin-top:12px;">
     <button id="genBtn" type="button">Genera LIN / PBN (con validazione)</button>
-    <span id="genMsg"></span>
+    <span id="genMsg" style="margin-left:10px;"></span>
+    <div id="debug" class="debug"></div>
   </div>
 </div>
 
@@ -138,307 +77,136 @@ W: ♠Q8 ♥J2 ♦AKQJ9753 ♣8
   <textarea id="outPBN" readonly></textarea>
 </div>
 
-<div class="box">
-  <b>Analisi didattica (rapida)</b> <small>(euristica: HCP + suggerimento di massima)</small>
-  <div id="analysis" style="margin-top:10px;"></div>
-</div>
-
 <script>
-/* ---------- Utils carte ---------- */
-const RANKS = "AKQJT98765432";
-const HCP = {A:4, K:3, Q:2, J:1};
+  const RANKS = "AKQJT98765432";
+  const HCP = {A:4, K:3, Q:2, J:1};
 
-function normRanks(x){
-  return (x || "")
-    .toUpperCase()
-    .replace(/10/g,"T")
-    .replace(/[^AKQJT98765432]/g,"");
-}
+  const $ = (id) => document.getElementById(id);
 
-function seatPBN(sp, he, di, cl){
-  // usa "-" se vuoto (PBN)
-  const S = sp || "-";
-  const H = he || "-";
-  const D = di || "-";
-  const C = cl || "-";
-  return `${S}.${H}.${D}.${C}`;
-}
-
-function seatRAW(sp, he, di, cl){
-  return `${sp}${he}${di}${cl}`;
-}
-
-function buildPBN(board, dealer, vul, N, E, S, W){
-  const vulPbn = (vul==="o")?"None":(vul==="n")?"NS":(vul==="e")?"EW":"All";
-  return `[Event "MK EasyHand"]\n[Board "${board}"]\n[Dealer "${dealer}"]\n[Vulnerable "${vulPbn}"]\n[Deal "N:${N} ${E} ${S} ${W}"]\n`;
-}
-
-function buildLIN(board, dealer, vul, Nraw, Wraw, Eraw, Sraw){
-  const dealerIdx = ({S:"1",W:"2",N:"3",E:"4"})[dealer] || "3";
-  return `pn|N,E,S,W|sv|${vul}|bd|${board}|md|${dealerIdx}${Nraw},${Wraw},${Eraw},${Sraw}|`;
-}
-
-/* ---------- Validazione 52 carte ---------- */
-function validateDeal(hands){
-  // hands: {N:{S,H,D,C}, E:{...}, S:{...}, W:{...}}
-  const seen = new Set();
-  const problems = [];
-  let total = 0;
-
-  function add(seat, suit, ranks){
-    for(const r of ranks){
-      total++;
-      const key = suit + r;
-      if(seen.has(key)) problems.push(`Doppione: ${key} (seat ${seat})`);
-      seen.add(key);
-    }
+  function normRanks(x){
+    return (x || "")
+      .toUpperCase()
+      .replace(/10/g,"T")
+      .replace(/[^AKQJT98765432]/g,"");
   }
 
-  for(const seat of ["N","E","S","W"]){
-    const h = hands[seat];
-    add(seat, "S", h.S);
-    add(seat, "H", h.H);
-    add(seat, "D", h.D);
-    add(seat, "C", h.C);
+  function readHands(){
+    const g = (id) => normRanks($(id).value);
+    return {
+      N: { S:g("nS"), H:g("nH"), D:g("nD"), C:g("nC") },
+      E: { S:g("eS"), H:g("eH"), D:g("eD"), C:g("eC") },
+      S: { S:g("sS"), H:g("sH"), D:g("sD"), C:g("sC") },
+      W: { S:g("wS"), H:g("wH"), D:g("wD"), C:g("wC") }
+    };
   }
 
-  // mancanti (se non 52 o duplicates)
-  const missing = [];
-  for(const suit of ["S","H","D","C"]){
-    for(const r of RANKS){
-      const key = suit + r;
-      if(!seen.has(key)) missing.push(key);
-    }
-  }
+  function validateDeal(hands){
+    const seen = new Set();
+    const problems = [];
+    let total = 0;
 
-  // controllo 13 carte per mano
-  const perSeat = {};
-  for(const seat of ["N","E","S","W"]){
-    const h = hands[seat];
-    perSeat[seat] = (h.S.length + h.H.length + h.D.length + h.C.length);
-    if(perSeat[seat] !== 13) problems.push(`Seat ${seat}: ${perSeat[seat]} carte (attese 13)`);
-  }
-
-  const ok = (problems.length === 0 && total === 52 && missing.length === 0);
-  return { ok, total, problems, missing, perSeat };
-}
-
-/* ---------- Analisi didattica (HCP + euristica) ---------- */
-function hcpOf(ranks){
-  let s = 0;
-  for(const r of ranks) s += (HCP[r] || 0);
-  return s;
-}
-function seatHCP(h){
-  return hcpOf(h.S) + hcpOf(h.H) + hcpOf(h.D) + hcpOf(h.C);
-}
-function suitLen(h, suit){ return (h[suit]||"").length; }
-
-function suggest(hands){
-  const hN = seatHCP(hands.N), hS = seatHCP(hands.S), hE = seatHCP(hands.E), hW = seatHCP(hands.W);
-  const ns = hN + hS, ew = hE + hW;
-
-  // fit migliore (solo euristica: lunghezze sommate)
-  function bestFit(pairA, pairB){
-    const out = [];
-    for(const suit of ["S","H","D","C"]){
-      const len = suitLen(pairA, suit) + suitLen(pairB, suit);
-      out.push({suit, len});
-    }
-    out.sort((a,b)=>b.len-a.len);
-    return out[0];
-  }
-
-  const fitNS = bestFit(hands.N, hands.S);
-  const fitEW = bestFit(hands.E, hands.W);
-
-  function gameHint(points, fit){
-    if(points >= 25){
-      // preferisci maggiore se fit>=8, altrimenti NT
-      if(fit.len >= 8 && (fit.suit==="S" || fit.suit==="H")) return `Probabile manche a ${fit.suit} (fit ${fit.len} carte)`;
-      return `Probabile manche a SA (punti ${points})`;
-    }
-    if(points >= 23) return `Invito (punti ${points})`;
-    return `Parziale (punti ${points})`;
-  }
-
-  return {
-    hcp: {N:hN,S:hS,E:hE,W:hW, NS:ns, EW:ew},
-    fitNS, fitEW,
-    hintNS: gameHint(ns, fitNS),
-    hintEW: gameHint(ew, fitEW)
-  };
-}
-
-/* ---------- UI refs ---------- */
-const imgInput = document.getElementById("imgInput");
-const imgPreview = document.getElementById("imgPreview");
-const imgMsg = document.getElementById("imgMsg");
-const headerStatus = document.getElementById("headerStatus");
-
-const boardNo = document.getElementById("boardNo");
-const dealer = document.getElementById("dealer");
-const vul = document.getElementById("vul");
-
-const outLIN = document.getElementById("outLIN");
-const outPBN = document.getElementById("outPBN");
-const genMsg = document.getElementById("genMsg");
-const analysis = document.getElementById("analysis");
-
-let lastImage = null;
-
-/* ---------- Upload immagine ---------- */
-imgInput.addEventListener("change", () => {
-  const f = imgInput.files && imgInput.files[0];
-  if(!f){
-    imgMsg.innerHTML = "";
-    imgPreview.style.display = "none";
-    lastImage = null;
-    return;
-  }
-  const url = URL.createObjectURL(f);
-  imgPreview.src = url;
-  imgPreview.style.display = "block";
-  imgMsg.innerHTML = `<span class="ok">Screenshot caricato ✅</span>`;
-  lastImage = imgPreview;
-});
-
-/* ---------- OCR header (Board/Dealer/Vul) ---------- */
-function normHeaderText(t){
-  return (t||"")
-    .replace(/\r/g,"\n")
-    .toUpperCase()
-    .replace(/10/g,"T");
-}
-function parseHeader(text){
-  const t = normHeaderText(text);
-
-  const b = (t.match(/BOARD\s*([0-9]{1,2})/)||[])[1] || "";
-  const d = (t.match(/DEALER\s*([NESW])/)||[])[1] || "";
-  let v = (t.match(/(NONE|NS|EW|ALL)\s*VUL/)||[])[1] || "";
-  if(!v) v = (t.match(/(NONE|NS|EW|ALL)\s*VU?L/)||[])[1] || "";
-
-  const vulMap = {NONE:"o", NS:"n", EW:"e", ALL:"b"};
-  return { board:b, dealer:d, vulCode: vulMap[v] || "", vulRaw:v };
-}
-
-async function ocrHeaderFromImage(imgEl){
-  // crop percentuali: alto-sinistra, dove c'è Board/Dealer/Vul
-  const W = imgEl.naturalWidth, H = imgEl.naturalHeight;
-  const x = Math.floor(W * 0.02);
-  const y = Math.floor(H * 0.03);
-  const w = Math.floor(W * 0.40);
-  const h = Math.floor(H * 0.25);
-
-  const c = document.createElement("canvas");
-  c.width = w; c.height = h;
-  const ctx = c.getContext("2d");
-  ctx.drawImage(imgEl, x, y, w, h, 0, 0, w, h);
-
-  // un minimo di “schiarita” per foto schermo
-  const imgData = ctx.getImageData(0,0,w,h);
-  const d = imgData.data;
-  for(let i=0;i<d.length;i+=4){
-    const r=d[i], g=d[i+1], b=d[i+2];
-    let yv = 0.2126*r + 0.7152*g + 0.0722*b;
-    yv = (yv>200)?255:(yv<70?0:yv);
-    d[i]=d[i+1]=d[i+2]=yv;
-  }
-  ctx.putImageData(imgData,0,0);
-
-  const { data: { text } } = await Tesseract.recognize(c, "eng", {
-    logger: m => {
-      if(m.status === "recognizing text"){
-        headerStatus.innerHTML = `OCR in corso… ${(m.progress*100).toFixed(0)}%`;
+    function add(seat, suit, ranks){
+      for(const r of ranks){
+        total++;
+        const key = suit + r;
+        if(seen.has(key)) problems.push(`Doppione: ${key} (seat ${seat})`);
+        seen.add(key);
       }
     }
-  });
-  return text;
-}
 
-document.getElementById("readHeaderBtn").addEventListener("click", async () => {
-  if(!lastImage){
-    headerStatus.innerHTML = `<span class="bad">Carica prima uno screenshot.</span>`;
-    return;
-  }
-  try{
-    headerStatus.innerHTML = "OCR in corso…";
-    const text = await ocrHeaderFromImage(lastImage);
-    const p = parseHeader(text);
-
-    if(p.board) boardNo.value = p.board;
-    if(p.dealer) dealer.value = p.dealer;
-    if(p.vulCode) vul.value = p.vulCode;
-
-    if(p.board && p.dealer && p.vulCode){
-      headerStatus.innerHTML = `<span class="ok">Letto ✅</span> Board ${p.board} • Dealer ${p.dealer} • Vul ${p.vulRaw}`;
-    }else{
-      headerStatus.innerHTML =
-        `<span class="bad">OCR parziale</span> (puoi completare a mano) — testo letto: <pre style="white-space:pre-wrap;margin:8px 0 0 0;">${text}</pre>`;
+    const perSeat = {};
+    for(const seat of ["N","E","S","W"]){
+      const h = hands[seat];
+      add(seat, "S", h.S);
+      add(seat, "H", h.H);
+      add(seat, "D", h.D);
+      add(seat, "C", h.C);
+      perSeat[seat] = h.S.length + h.H.length + h.D.length + h.C.length;
+      if(perSeat[seat] !== 13) problems.push(`Seat ${seat}: ${perSeat[seat]} carte (attese 13)`);
     }
-  }catch(e){
-    headerStatus.innerHTML = `<span class="bad">OCR fallito</span> (inserisci Board/Dealer/Vul a mano).`;
-  }
-});
 
-/* ---------- Generazione LIN/PBN + Validazione + Analisi ---------- */
-function readHandsFromInputs(){
-  const hands = {
-    N: { S:normRanks(nS.value), H:normRanks(nH.value), D:normRanks(nD.value), C:normRanks(nC.value) },
-    E: { S:normRanks(eS.value), H:normRanks(eH.value), D:normRanks(eD.value), C:normRanks(eC.value) },
-    S: { S:normRanks(sS.value), H:normRanks(sH.value), D:normRanks(sD.value), C:normRanks(sC.value) },
-    W: { S:normRanks(wS.value), H:normRanks(wH.value), D:normRanks(wD.value), C:normRanks(wC.value) }
-  };
-  return hands;
-}
+    const missing = [];
+    for(const suit of ["S","H","D","C"]){
+      for(const r of RANKS){
+        const key = suit + r;
+        if(!seen.has(key)) missing.push(key);
+      }
+    }
 
-document.getElementById("genBtn").addEventListener("click", () => {
-  const b = (boardNo.value || "1").replace(/[^0-9]/g,"") || "1";
-  const d = dealer.value || "N";
-  const v = vul.value || "o";
-
-  const hands = readHandsFromInputs();
-  const val = validateDeal(hands);
-
-  if(!val.ok){
-    genMsg.innerHTML = `<span class="bad">Validazione KO</span> (tot=${val.total}).`;
-    const miss = val.missing.slice(0,18).join(" ");
-    const probs = val.problems.slice(0,8).join("<br>");
-    analysis.innerHTML =
-      `<div class="bad">❌ Mano non valida</div>
-       <div><b>Carte per seat:</b> N=${val.perSeat.N}, E=${val.perSeat.E}, S=${val.perSeat.S}, W=${val.perSeat.W}</div>
-       <div style="margin-top:8px;"><b>Problemi:</b><br>${probs || "—"}</div>
-       <div style="margin-top:8px;"><b>Mancanti (prime 18):</b> ${miss}${val.missing.length>18 ? " …" : ""}</div>
-       <div style="margin-top:8px;"><small>Tipico: un “10” non inserito (usa 10 o T), oppure una carta messa in 2 posti.</small></div>`;
-    outLIN.value = "";
-    outPBN.value = "";
-    return;
+    const ok = (problems.length === 0 && total === 52 && missing.length === 0);
+    return { ok, total, problems, missing, perSeat };
   }
 
-  genMsg.innerHTML = `<span class="ok">Validazione OK ✅</span>`;
+  function seatPBN(sp, he, di, cl){
+    const S = sp || "-";
+    const H = he || "-";
+    const D = di || "-";
+    const C = cl || "-";
+    return `${S}.${H}.${D}.${C}`;
+  }
 
-  const Npbn = seatPBN(hands.N.S, hands.N.H, hands.N.D, hands.N.C);
-  const Epbn = seatPBN(hands.E.S, hands.E.H, hands.E.D, hands.E.C);
-  const Spbn = seatPBN(hands.S.S, hands.S.H, hands.S.D, hands.S.C);
-  const Wpbn = seatPBN(hands.W.S, hands.W.H, hands.W.D, hands.W.C);
+  function seatRAW(sp, he, di, cl){
+    return `${sp}${he}${di}${cl}`;
+  }
 
-  const Nraw = seatRAW(hands.N.S, hands.N.H, hands.N.D, hands.N.C);
-  const Eraw = seatRAW(hands.E.S, hands.E.H, hands.E.D, hands.E.C);
-  const Sraw = seatRAW(hands.S.S, hands.S.H, hands.S.D, hands.S.C);
-  const Wraw = seatRAW(hands.W.S, hands.W.H, hands.W.D, hands.W.C);
+  function buildPBN(board, dealer, vul, N, E, S, W){
+    const vulPbn = (vul==="o")?"None":(vul==="n")?"NS":(vul==="e")?"EW":"All";
+    return `[Event "MK EasyHand"]\n[Board "${board}"]\n[Dealer "${dealer}"]\n[Vulnerable "${vulPbn}"]\n[Deal "N:${N} ${E} ${S} ${W}"]\n`;
+  }
 
-  outPBN.value = buildPBN(b, d, v, Npbn, Epbn, Spbn, Wpbn);
-  outLIN.value = buildLIN(b, d, v, Nraw, Wraw, Eraw, Sraw);
+  function buildLIN(board, dealer, vul, Nraw, Wraw, Eraw, Sraw){
+    const dealerIdx = ({S:"1",W:"2",N:"3",E:"4"})[dealer] || "3";
+    return `pn|N,E,S,W|sv|${vul}|bd|${board}|md|${dealerIdx}${Nraw},${Wraw},${Eraw},${Sraw}|`;
+  }
 
-  // Analisi didattica
-  const s = suggest(hands);
-  analysis.innerHTML =
-    `<div><b>HCP</b> — N:${s.hcp.N} E:${s.hcp.E} S:${s.hcp.S} W:${s.hcp.W} — <b>NS:${s.hcp.NS}</b> / <b>EW:${s.hcp.EW}</b></div>
-     <div style="margin-top:8px;"><b>Miglior fit NS:</b> ${s.fitNS.suit} (${s.fitNS.len} carte) • <b>Miglior fit EW:</b> ${s.fitEW.suit} (${s.fitEW.len} carte)</div>
-     <div style="margin-top:8px;"><b>Suggerimento NS:</b> ${s.hintNS}</div>
-     <div><b>Suggerimento EW:</b> ${s.hintEW}</div>
-     <div style="margin-top:8px;"><small>Nota: è un consiglio “da pausa torneo” basato su punti+fit, non è double-dummy.</small></div>`;
-});
+  function hcpOf(ranks){
+    let s = 0;
+    for(const r of ranks) s += (HCP[r] || 0);
+    return s;
+  }
+  function seatHCP(h){ return hcpOf(h.S)+hcpOf(h.H)+hcpOf(h.D)+hcpOf(h.C); }
+
+  $("genBtn").addEventListener("click", () => {
+    const hands = readHands();
+
+    // DEBUG: mostra cosa sta leggendo davvero
+    $("debug").textContent =
+      `DEBUG LETTURA:\n` +
+      `N ♠=${hands.N.S} ♥=${hands.N.H} ♦=${hands.N.D} ♣=${hands.N.C}\n` +
+      `E ♠=${hands.E.S} ♥=${hands.E.H} ♦=${hands.E.D} ♣=${hands.E.C}\n` +
+      `S ♠=${hands.S.S} ♥=${hands.S.H} ♦=${hands.S.D} ♣=${hands.S.C}\n` +
+      `W ♠=${hands.W.S} ♥=${hands.W.H} ♦=${hands.W.D} ♣=${hands.W.C}\n`;
+
+    const val = validateDeal(hands);
+    if(!val.ok){
+      $("genMsg").innerHTML = `<span class="bad">Validazione KO (tot=${val.total})</span>`;
+      $("outLIN").value = "";
+      $("outPBN").value = "";
+      return;
+    }
+
+    $("genMsg").innerHTML = `<span class="ok">Validazione OK ✅</span>`;
+
+    // board/dealer/vul base (poi li agganciamo allo screenshot)
+    const board="1", dealer="N", vul="o";
+
+    const Npbn = seatPBN(hands.N.S, hands.N.H, hands.N.D, hands.N.C);
+    const Epbn = seatPBN(hands.E.S, hands.E.H, hands.E.D, hands.E.C);
+    const Spbn = seatPBN(hands.S.S, hands.S.H, hands.S.D, hands.S.C);
+    const Wpbn = seatPBN(hands.W.S, hands.W.H, hands.W.D, hands.W.C);
+
+    const Nraw = seatRAW(hands.N.S, hands.N.H, hands.N.D, hands.N.C);
+    const Eraw = seatRAW(hands.E.S, hands.E.H, hands.E.D, hands.E.C);
+    const Sraw = seatRAW(hands.S.S, hands.S.H, hands.S.D, hands.S.C);
+    const Wraw = seatRAW(hands.W.S, hands.W.H, hands.W.D, hands.W.C);
+
+    $("outPBN").value = buildPBN(board, dealer, vul, Npbn, Epbn, Spbn, Wpbn);
+    $("outLIN").value = buildLIN(board, dealer, vul, Nraw, Wraw, Eraw, Sraw);
+
+    // mini-analisi HCP
+    const hN=seatHCP(hands.N), hE=seatHCP(hands.E), hS=seatHCP(hands.S), hW=seatHCP(hands.W);
+    $("debug").textContent += `\nHCP: N=${hN} E=${hE} S=${hS} W=${hW} — NS=${hN+hS} EW=${hE+hW}\n`;
+  });
 </script>
 
 </body>
