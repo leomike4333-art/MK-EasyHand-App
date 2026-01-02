@@ -43,16 +43,17 @@
   <div class="topbar">
     <span class="pill"><b>1 mano</b> → Validazione → LIN/PBN → Apri BSOL/BBO</span>
 
-    <label for="shotType" class="small"><b>Tipo screenshot:</b></label>
- <select id="shotType" title="Sorgente screenshot">
-  <option value="A">A – RealBridge</option>
-  <option value="B">B – BBO</option>
-  <option value="C">C – Altro</option>
-</select>
-
+    <label for="shotType" class="small"><b>Sorgente screenshot:</b></label>
+    <select id="shotType" title="Sorgente screenshot (A RealBridge / B BBO / C Altro)">
+      <option value="A">A – RealBridge</option>
+      <option value="B">B – BBO</option>
+      <option value="C">C – Altro</option>
+    </select>
 
     <span class="small">Usa <b>10</b> oppure <b>T</b>. Il sistema normalizza e controlla doppioni/mancanti.</span>
   </div>
+
+  <div class="small" style="margin-top:8px"><b>Guida:</b> <span id="shotHint"></span></div>
 
   <div class="actions" style="margin-top:12px">
     <button class="gray" id="btnExample" type="button">Carica esempio</button>
@@ -108,7 +109,7 @@
     <button id="btnOpenBBO" type="button" disabled>Apri in BBO Handviewer</button>
   </div>
   <div class="small">
-    Nota: l’apertura è via URL (nuova scheda). Se il browser blocca i popup, consenti “Apri in nuova scheda”.
+    Nota: l’apertura è in nuova scheda. Se il browser blocca i popup, consenti “Apri in nuova scheda”.
   </div>
 </div>
 
@@ -120,6 +121,17 @@
 <script>
   const $ = (id) => document.getElementById(id);
 
+  // --- Hint A/B/C
+  function updateShotHint(){
+    const v = $("shotType").value;
+    const hints = {
+      A: "RealBridge: layout di solito più leggibile, simboli chiari e righe ben distanziate.",
+      B: "BBO: layout più compatto; attenzione a 10/T e a possibili simboli piccoli.",
+      C: "Altro: per ora inserimento manuale (poi aggiungiamo preset/OCR dedicato)."
+    };
+    $("shotHint").textContent = hints[v] || "";
+  }
+
   // 10 -> T, solo ranks
   function normRanks(t){
     return (t||"")
@@ -129,7 +141,6 @@
   }
 
   function readHands(){
-    // NOTA: qui IDs sono quelli dell'HTML sopra (coerenti)
     return {
       N:{S:normRanks($("nS").value),H:normRanks($("nH").value),D:normRanks($("nD").value),C:normRanks($("nC").value)},
       E:{S:normRanks($("eS").value),H:normRanks($("eH").value),D:normRanks($("eD").value),C:normRanks($("eC").value)},
@@ -169,7 +180,7 @@
     $("btnOpenBBO").disabled = !ok;
   }
 
-  // For MVP we keep fixed tags (poi li leggeremo dallo screenshot)
+  // MVP: board/dealer/vul fissi (poi li leggeremo da screenshot)
   const BOARD_NO = 1;
   const DEALER = "N";
   const VUL_NONE = "None";
@@ -197,7 +208,6 @@
   }
 
   function buildBSOLUrl(h){
-    // BSOL (ddummy) – parametri base
     const base = "https://dds.bridgewebs.com/bsol2/ddummy.htm";
     const params = new URLSearchParams({
       board: String(BOARD_NO),
@@ -213,12 +223,11 @@
   }
 
   function buildBBOUrl(h){
-    // BBO handviewer
     const base = "https://www.bridgebase.com/tools/handviewer.html";
     const params = new URLSearchParams({
       b: String(BOARD_NO),
       d: DEALER.toLowerCase(),
-      v: "-",           // none
+      v: "-", // none
       n: seatHV(h.N),
       e: seatHV(h.E),
       s: seatHV(h.S),
@@ -239,7 +248,7 @@ Validazione:
 OK=${vld.ok}  tot=${vld.tot}
 ${vld.errors.length ? ("Errori:\n- " + vld.errors.join("\n- ")) : "Nessun errore."}
 
-Tipo screenshot selezionato: ${$("shotType").value} (${ $("shotType").value==="A" ? "RealBridge" : "BBO" })`;
+Sorgente selezionata: ${$("shotType").value}`;
   }
 
   // UI actions
@@ -258,10 +267,7 @@ Tipo screenshot selezionato: ${$("shotType").value} (${ $("shotType").value==="A
   };
 
   $("btnGen").onclick = () => {
-    // evita letture “vecchie” se un campo è ancora in focus
     document.activeElement && document.activeElement.blur();
-
-    // piccola pausa per far aggiornare il DOM (browser vari)
     setTimeout(() => {
       const h = readHands();
       const vld = validate52(h);
@@ -307,7 +313,9 @@ Tipo screenshot selezionato: ${$("shotType").value} (${ $("shotType").value==="A
     window.open(buildBBOUrl(h), "_blank", "noopener,noreferrer");
   };
 
-  // initial
+  // init
+  $("shotType").addEventListener("change", updateShotHint);
+  updateShotHint();
   setStatus(false);
 </script>
 
