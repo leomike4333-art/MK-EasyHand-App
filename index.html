@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -32,6 +32,7 @@
   .bad{color:var(--bad)}
   #debug{white-space:pre-wrap;background:#f7f7f7;border-radius:10px;padding:10px;border:1px solid #eee;font-size:12px;margin-top:10px}
   select{padding:8px 10px;border-radius:10px;border:1px solid #ccc}
+  .mini{width:90px}
 </style>
 </head>
 
@@ -41,33 +42,52 @@
 
 <div class="box">
   <div class="topbar">
-    <span class="pill"><b>1 mano</b> → Validazione → LIN/PBN → Apri BSOL/BBO</span>
+    <span class="pill"><b>1 board</b> → Validate → LIN/PBN → Open BSOL/BBO</span>
 
-    <label for="shotType" class="small"><b>Sorgente screenshot:</b></label>
-    <select id="shotType" title="Sorgente screenshot (A RealBridge / B BBO / C Altro)">
+    <label for="shotType" class="small"><b>Source:</b></label>
+    <select id="shotType" title="Screenshot source">
       <option value="A">A – RealBridge</option>
       <option value="B">B – BBO</option>
-      <option value="C">C – Altro</option>
+      <option value="C">C – Other</option>
     </select>
 
-    <span class="small">Usa <b>10</b> oppure <b>T</b>. Il sistema normalizza e controlla doppioni/mancanti.</span>
+    <label for="boardNo" class="small"><b>Board:</b></label>
+    <input id="boardNo" class="mini" inputmode="numeric" value="1" />
+
+    <label for="dealer" class="small"><b>Dealer:</b></label>
+    <select id="dealer">
+      <option value="N">N</option>
+      <option value="E">E</option>
+      <option value="S">S</option>
+      <option value="W">W</option>
+    </select>
+
+    <label for="vul" class="small"><b>Vul:</b></label>
+    <select id="vul">
+      <option value="None">None</option>
+      <option value="NS">NS</option>
+      <option value="EW">EW</option>
+      <option value="All">All</option>
+    </select>
+
+    <span class="small">Use <b>10</b> or <b>T</b>. The app normalizes and checks missing/duplicate cards.</span>
   </div>
 
-  <div class="small" style="margin-top:8px"><b>Guida:</b> <span id="shotHint"></span></div>
+  <div class="small" style="margin-top:8px"><b>Hint:</b> <span id="shotHint"></span></div>
 
   <div class="actions" style="margin-top:12px">
-    <button class="gray" id="btnExample" type="button">Carica esempio</button>
-    <button class="red" id="btnClear" type="button">Svuota tutto</button>
-    <button class="green" id="btnGen" type="button">Genera LIN / PBN (con validazione)</button>
-    <span id="status" class="bad">Validazione KO</span>
+    <button class="gray" id="btnExample" type="button">Load sample</button>
+    <button class="red" id="btnClear" type="button">Clear</button>
+    <button class="green" id="btnGen" type="button">Generate LIN / PBN (validate)</button>
+    <span id="status" class="bad">Validation: KO</span>
   </div>
 
-  <div id="debug">DEBUG: pronto.</div>
+  <div id="debug">DEBUG: ready.</div>
 </div>
 
 <div class="grid">
   <div class="seat">
-    <h3>NORD</h3>
+    <h3>NORTH</h3>
     <div class="row"><div class="suit">♠</div><input id="nS" placeholder="AJ542"></div>
     <div class="row"><div class="suit">♥</div><input id="nH" placeholder="K6543"></div>
     <div class="row"><div class="suit">♦</div><input id="nD" placeholder="64"></div>
@@ -75,7 +95,7 @@
   </div>
 
   <div class="seat">
-    <h3>EST</h3>
+    <h3>EAST</h3>
     <div class="row"><div class="suit">♠</div><input id="eS" placeholder="973"></div>
     <div class="row"><div class="suit">♥</div><input id="eH" placeholder="10987"></div>
     <div class="row"><div class="suit">♦</div><input id="eD" placeholder="8"></div>
@@ -83,7 +103,7 @@
   </div>
 
   <div class="seat">
-    <h3>SUD</h3>
+    <h3>SOUTH</h3>
     <div class="row"><div class="suit">♠</div><input id="sS" placeholder="K106"></div>
     <div class="row"><div class="suit">♥</div><input id="sH" placeholder="AQ"></div>
     <div class="row"><div class="suit">♦</div><input id="sD" placeholder="102"></div>
@@ -91,7 +111,7 @@
   </div>
 
   <div class="seat">
-    <h3>OVEST</h3>
+    <h3>WEST</h3>
     <div class="row"><div class="suit">♠</div><input id="wS" placeholder="Q8"></div>
     <div class="row"><div class="suit">♥</div><input id="wH" placeholder="J2"></div>
     <div class="row"><div class="suit">♦</div><input id="wD" placeholder="AKQJ9753"></div>
@@ -103,13 +123,13 @@
   <b>Output LIN</b>
   <textarea id="outLIN" readonly></textarea>
   <div class="actions">
-    <button class="gray" id="btnCopyLin" type="button">Copia LIN</button>
-    <button id="btnDlLin" type="button">Scarica .lin</button>
-    <button id="btnOpenBSOL" type="button" disabled>Apri in Bridge Solver Online</button>
-    <button id="btnOpenBBO" type="button" disabled>Apri in BBO Handviewer</button>
+    <button class="gray" id="btnCopyLin" type="button">Copy LIN</button>
+    <button id="btnDlLin" type="button">Download .lin</button>
+    <button id="btnOpenBSOL" type="button" disabled>Open in Bridge Solver Online</button>
+    <button id="btnOpenBBO" type="button" disabled>Open in BBO Handviewer</button>
   </div>
   <div class="small">
-    Nota: l’apertura è in nuova scheda. Se il browser blocca i popup, consenti “Apri in nuova scheda”.
+    Note: links open in a new tab. If pop-ups are blocked, allow new tabs for this site.
   </div>
 </div>
 
@@ -121,18 +141,18 @@
 <script>
   const $ = (id) => document.getElementById(id);
 
-  // --- Hint A/B/C
+  // --- Source hints
   function updateShotHint(){
     const v = $("shotType").value;
     const hints = {
-      A: "RealBridge: layout di solito più leggibile, simboli chiari e righe ben distanziate.",
-      B: "BBO: layout più compatto; attenzione a 10/T e a possibili simboli piccoli.",
-      C: "Altro: per ora inserimento manuale (poi aggiungiamo preset/OCR dedicato)."
+      A: "RealBridge: usually clearer layout; board/dealer/vul are often top-left.",
+      B: "BBO: more compact layout; watch out for 10/T and tiny suit symbols.",
+      C: "Other federation software: manual input now; later we add presets + OCR templates."
     };
     $("shotHint").textContent = hints[v] || "";
   }
 
-  // 10 -> T, solo ranks
+  // 10 -> T, keep only ranks
   function normRanks(t){
     return (t||"")
       .toUpperCase()
@@ -162,28 +182,39 @@
         for (const r of h[p][s]){
           tot++; cnt++;
           const k = s + r;
-          if (seen.has(k)) errors.push("Doppione: " + k);
+          if (seen.has(k)) errors.push("Duplicate: " + k);
           seen.add(k);
         }
       }
-      if (cnt !== 13) errors.push(`Seat ${p}: ${cnt} carte (attese 13)`);
+      if (cnt !== 13) errors.push(`Seat ${p}: ${cnt} cards (expected 13)`);
     }
-    if (tot !== 52) errors.push(`Totale carte: ${tot} (attese 52)`);
-
+    if (tot !== 52) errors.push(`Total cards: ${tot} (expected 52)`);
     return { ok: errors.length===0, tot, errors };
   }
 
   function setStatus(ok){
     $("status").className = ok ? "ok" : "bad";
-    $("status").textContent = ok ? "Validazione OK ✅" : "Validazione KO";
+    $("status").textContent = ok ? "Validation: OK ✅" : "Validation: KO";
     $("btnOpenBSOL").disabled = !ok;
     $("btnOpenBBO").disabled = !ok;
   }
 
-  // MVP: board/dealer/vul fissi (poi li leggeremo da screenshot)
-  const BOARD_NO = 1;
-  const DEALER = "N";
-  const VUL_NONE = "None";
+  function boardNumber(){
+    const raw = ($("boardNo").value || "").trim();
+    const n = parseInt(raw, 10);
+    return (Number.isFinite(n) && n > 0) ? n : 1;
+  }
+
+  function dealerVal(){ return $("dealer").value || "N"; }
+  function vulVal(){ return $("vul").value || "None"; }
+
+  // Map Vulnerability to LIN 'sv' code: o/ n/ e/ b
+  function vulToLinSv(v){
+    if (v === "NS") return "n";
+    if (v === "EW") return "e";
+    if (v === "All") return "b";
+    return "o"; // None
+  }
 
   // BSOL seat string S.H.D.C
   function seatDots(seat){ return `${seat.S||"-"}.${seat.H||"-"}.${seat.D||"-"}.${seat.C||"-"}`; }
@@ -191,28 +222,39 @@
   function seatHV(seat){ return (`s${seat.S}h${seat.H}d${seat.D}c${seat.C}`).toLowerCase(); }
 
   function buildOutputs(h){
+    const b = boardNumber();
+    const d = dealerVal();
+    const v = vulVal();
+
     const n = seatDots(h.N);
     const e = seatDots(h.E);
     const s = seatDots(h.S);
     const w = seatDots(h.W);
 
     $("outPBN").value =
-`[Board "${BOARD_NO}"]
-[Dealer "${DEALER}"]
-[Vulnerable "${VUL_NONE}"]
+`[Board "${b}"]
+[Dealer "${d}"]
+[Vulnerable "${v}"]
 [Deal "N:${n} ${e} ${s} ${w}"]`;
 
-    // LIN minimal deal (ordine N,W,E,S come già ti funziona)
+    // LIN minimal deal: order N,W,E,S (works well with your flow)
     const md = `${h.N.S}${h.N.H}${h.N.D}${h.N.C},${h.W.S}${h.W.H}${h.W.D}${h.W.C},${h.E.S}${h.E.H}${h.E.D}${h.E.C},${h.S.S}${h.S.H}${h.S.D}${h.S.C}`;
-    $("outLIN").value = `pn|N,E,S,W|sv|o|bd|${BOARD_NO}|md|3${md}|`;
+    const sv = vulToLinSv(v);
+    const dealerCode = ({N:3,E:4,S:1,W:2}[d] || 3); // LIN md|<dealerCode>...
+
+    $("outLIN").value = `pn|N,E,S,W|sv|${sv}|bd|${b}|md|${dealerCode}${md}|`;
   }
 
   function buildBSOLUrl(h){
     const base = "https://dds.bridgewebs.com/bsol2/ddummy.htm";
+    const b = boardNumber();
+    const d = dealerVal();
+    const v = vulVal();
+
     const params = new URLSearchParams({
-      board: String(BOARD_NO),
-      dealer: DEALER,
-      vul: VUL_NONE,
+      board: String(b),
+      dealer: d,
+      vul: v,
       north: seatDots(h.N),
       east:  seatDots(h.E),
       south: seatDots(h.S),
@@ -222,12 +264,24 @@
     return `${base}?${params.toString()}`;
   }
 
+  // BBO Handviewer 'v' codes: '-' none, 'n' NS, 'e' EW, 'b' all
+  function vulToBboV(v){
+    if (v === "NS") return "n";
+    if (v === "EW") return "e";
+    if (v === "All") return "b";
+    return "-";
+  }
+
   function buildBBOUrl(h){
     const base = "https://www.bridgebase.com/tools/handviewer.html";
+    const b = boardNumber();
+    const d = dealerVal();
+    const v = vulToBboV(vulVal());
+
     const params = new URLSearchParams({
-      b: String(BOARD_NO),
-      d: DEALER.toLowerCase(),
-      v: "-", // none
+      b: String(b),
+      d: d.toLowerCase(),
+      v: v,
       n: seatHV(h.N),
       e: seatHV(h.E),
       s: seatHV(h.S),
@@ -238,21 +292,25 @@
 
   function debugDump(h, vld){
     $("debug").textContent =
-`DEBUG LETTURA:
-N ♠=${h.N.S} ♥=${h.N.H} ♦=${h.N.D} ♣=${h.N.C}
-E ♠=${h.E.S} ♥=${h.E.H} ♦=${h.E.D} ♣=${h.E.C}
-S ♠=${h.S.S} ♥=${h.S.H} ♦=${h.S.D} ♣=${h.S.C}
-W ♠=${h.W.S} ♥=${h.W.H} ♦=${h.W.D} ♣=${h.W.C}
+`DEBUG:
+Source=${$("shotType").value}
+Board=${boardNumber()}  Dealer=${dealerVal()}  Vul=${vulVal()}
 
-Validazione:
-OK=${vld.ok}  tot=${vld.tot}
-${vld.errors.length ? ("Errori:\n- " + vld.errors.join("\n- ")) : "Nessun errore."}
+N S=${h.N.S} H=${h.N.H} D=${h.N.D} C=${h.N.C}
+E S=${h.E.S} H=${h.E.H} D=${h.E.D} C=${h.E.C}
+S S=${h.S.S} H=${h.S.H} D=${h.S.D} C=${h.S.C}
+W S=${h.W.S} H=${h.W.H} D=${h.W.D} C=${h.W.C}
 
-Sorgente selezionata: ${$("shotType").value}`;
+Validation: OK=${vld.ok}  total=${vld.tot}
+${vld.errors.length ? ("Errors:\n- " + vld.errors.join("\n- ")) : "No errors."}`;
   }
 
   // UI actions
   $("btnExample").onclick = () => {
+    $("boardNo").value = "1";
+    $("dealer").value = "N";
+    $("vul").value = "None";
+
     $("nS").value="AJ542"; $("nH").value="K6543"; $("nD").value="64"; $("nC").value="9";
     $("eS").value="973";   $("eH").value="10987"; $("eD").value="8";  $("eC").value="AJ1053";
     $("sS").value="K106";  $("sH").value="AQ";    $("sD").value="102";$("sC").value="KQ7642";
@@ -262,7 +320,7 @@ Sorgente selezionata: ${$("shotType").value}`;
   $("btnClear").onclick = () => {
     for (const id of ["nS","nH","nD","nC","eS","eH","eD","eC","sS","sH","sD","sC","wS","wH","wD","wC"]) $(id).value="";
     $("outLIN").value=""; $("outPBN").value="";
-    $("debug").textContent="DEBUG: svuotato.";
+    $("debug").textContent="DEBUG: cleared.";
     setStatus(false);
   };
 
@@ -273,7 +331,6 @@ Sorgente selezionata: ${$("shotType").value}`;
       const vld = validate52(h);
       debugDump(h, vld);
       setStatus(vld.ok);
-
       if (!vld.ok){
         $("outLIN").value = "";
         $("outPBN").value = "";
@@ -295,7 +352,7 @@ Sorgente selezionata: ${$("shotType").value}`;
     const blob = new Blob([t + "\n"], {type:"text/plain"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `board${BOARD_NO}.lin`;
+    a.download = `board${boardNumber()}.lin`;
     a.click();
   };
 
