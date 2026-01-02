@@ -1,178 +1,319 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MK EasyHand – FAST (RealBridge / BBO)</title>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MK EasyHand – Bridge → LIN / PBN</title>
 <style>
-body{font-family:Arial,Helvetica,sans-serif;background:#f2f2f2;margin:0;padding:20px}
-h1{margin:0 0 10px 0}
-.box{background:#fff;padding:14px;border-radius:12px;margin-bottom:14px}
-.small{color:#555;font-size:13px}
-.row{display:flex;align-items:center;gap:10px;margin:6px 0}
-.seat{font-weight:bold;margin-top:10px}
-.suit{width:22px}
-input{flex:1;padding:8px;border-radius:8px;border:1px solid #ccc}
-button{padding:10px 14px;border:none;border-radius:10px;background:#1976d2;color:#fff;font-size:15px;cursor:pointer}
-button.secondary{background:#666}
-button.good{background:#0a7a2f}
-button.warn{background:#b00020}
-textarea{width:100%;height:120px;font-family:monospace;font-size:13px}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
-.ok{color:#0a7a2f;font-weight:bold}
-.bad{color:#b00020;font-weight:bold}
-#debug{white-space:pre-wrap;background:#f7f7f7;border-radius:8px;padding:10px;font-size:12px;margin-top:10px}
-label{font-weight:bold}
-select{padding:6px 10px;border-radius:8px}
+  :root { --bg:#f2f2f2; --card:#fff; --muted:#666; --ok:#0a7a2f; --bad:#b00020; --blue:#1976d2; }
+  body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;padding:18px}
+  h1{margin:0 0 12px 0}
+  .box{background:var(--card);border-radius:12px;padding:14px;margin-bottom:14px}
+  .small{color:var(--muted);font-size:13px;line-height:1.35}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .seat{border:1px solid #e6e6e6;border-radius:12px;padding:12px}
+  .seat h3{margin:0 0 10px 0}
+  .row{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .suit{width:22px;font-weight:bold}
+  input{flex:1;padding:10px;border-radius:10px;border:1px solid #ccc;font-size:14px}
+  textarea{width:100%;height:120px;font-family:ui-monospace,Consolas,monospace;font-size:13px;border-radius:10px;border:1px solid #ccc;padding:10px;box-sizing:border-box}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  button{padding:10px 14px;border:0;border-radius:10px;color:#fff;background:var(--blue);cursor:pointer;font-size:14px}
+  button.gray{background:#666}
+  button.red{background:var(--bad)}
+  button.green{background:var(--ok)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  #status{font-weight:bold}
+  .ok{color:var(--ok)}
+  .bad{color:var(--bad)}
+  #debug{white-space:pre-wrap;background:#f7f7f7;border-radius:10px;padding:10px;border:1px solid #eee;font-size:12px;margin-top:10px}
+  .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  select{padding:8px 10px;border-radius:10px;border:1px solid #ccc}
+  .pill{padding:6px 10px;border-radius:999px;background:#eef3ff;color:#234}
+  .split{display:grid;grid-template-columns:1fr;gap:10px}
+  @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
 </style>
 </head>
 
 <body>
+  <h1>MK EasyHand – Bridge → LIN / PBN</h1>
 
-<h1>MK EasyHand – FAST</h1>
+  <div class="box">
+    <div class="topbar">
+      <span class="pill"><b>Input:</b> 1 mano (52 carte) → output LIN/PBN</span>
 
-<div class="box">
-  <label>Tipo screenshot:</label>
-  <select id="shotType">
-    <option value="A">A – RealBridge</option>
-    <option value="B">B – BBO</option>
-  </select>
-  <div class="small">Serve solo per sapere che tipo di layout stiamo analizzando.</div>
-</div>
+      <label for="shotType" class="small"><b>Screenshot tipo:</b></label>
+      <select id="shotType" title="Solo indicazione (A RealBridge / B BBO)">
+        <option value="A">A – RealBridge</option>
+        <option value="B">B – BBO</option>
+      </select>
 
-<div class="box">
-  <label>Screenshot (solo riferimento visivo)</label>
-  <input type="file" accept="image/*" id="imgInput">
-  <div class="small">Per ora lo carichiamo solo come promemoria visivo.</div>
-</div>
+      <span class="small">Usa <b>10</b> oppure <b>T</b>. Il sistema normalizza e controlla doppioni/mancanti.</span>
+    </div>
 
-<div class="box">
-  <b>Inserisci la mano</b>
-  <div class="small">Usa 10 oppure T. Una sola mano, focus didattico.</div>
+    <div class="actions" style="margin-top:12px">
+      <button class="gray" id="btnExample">Carica esempio</button>
+      <button class="red" id="btnClear">Svuota tutto</button>
+      <button class="green" id="btnGen">Genera LIN / PBN (con validazione)</button>
+      <span id="status" class="bad">Validazione KO</span>
+    </div>
 
-  <div class="seat">NORD</div>
-  <div class="row"><div class="suit">♠</div><input id="nS"></div>
-  <div class="row"><div class="suit">♥</div><input id="nH"></div>
-  <div class="row"><div class="suit">♦</div><input id="nD"></div>
-  <div class="row"><div class="suit">♣</div><input id="nC"></div>
-
-  <div class="seat">EST</div>
-  <div class="row"><div class="suit">♠</div><input id="eS"></div>
-  <div class="row"><div class="suit">♥</div><input id="eH"></div>
-  <div class="row"><div class="suit">♦</div><input id="eD"></div>
-  <div class="row"><div class="suit">♣</div><input id="eC"></div>
-
-  <div class="seat">SUD</div>
-  <div class="row"><div class="suit">♠</div><input id="sS"></div>
-  <div class="row"><div class="suit">♥</div><input id="sH"></div>
-  <div class="row"><div class="suit">♦</div><input id="sD"></div>
-  <div class="row"><div class="suit">♣</div><input id="sC"></div>
-
-  <div class="seat">OVEST</div>
-  <div class="row"><div class="suit">♠</div><input id="wS"></div>
-  <div class="row"><div class="suit">♥</div><input id="wH"></div>
-  <div class="row"><div class="suit">♦</div><input id="wD"></div>
-  <div class="row"><div class="suit">♣</div><input id="wC"></div>
-
-  <div class="actions">
-    <button id="genBtn" class="good">Genera LIN / PBN</button>
-    <span id="msg"></span>
+    <div id="debug">DEBUG: pronto.</div>
   </div>
 
-  <div id="debug">DEBUG: pronto</div>
-</div>
+  <div class="grid">
+    <div class="seat">
+      <h3>NORD</h3>
+      <div class="row"><div class="suit">♠</div><input id="nS" placeholder="AJ542"></div>
+      <div class="row"><div class="suit">♥</div><input id="nH" placeholder="K6543"></div>
+      <div class="row"><div class="suit">♦</div><input id="nD" placeholder="64"></div>
+      <div class="row"><div class="suit">♣</div><input id="nC" placeholder="9"></div>
+    </div>
 
-<div class="box">
-  <b>Output LIN</b>
-  <textarea id="outLIN" readonly></textarea>
-  <div class="actions">
-    <button id="copyLin" class="secondary">Copia LIN</button>
-    <button id="dlLin">Scarica .lin</button>
+    <div class="seat">
+      <h3>EST</h3>
+      <div class="row"><div class="suit">♠</div><input id="eS" placeholder="973"></div>
+      <div class="row"><div class="suit">♥</div><input id="eH" placeholder="10987"></div>
+      <div class="row"><div class="suit">♦</div><input id="eD" placeholder="8"></div>
+      <div class="row"><div class="suit">♣</div><input id="eC" placeholder="AJ1053"></div>
+    </div>
+
+    <div class="seat">
+      <h3>SUD</h3>
+      <div class="row"><div class="suit">♠</div><input id="sS" placeholder="K106"></div>
+      <div class="row"><div class="suit">♥</div><input id="sH" placeholder="AQ"></div>
+      <div class="row"><div class="suit">♦</div><input id="sD" placeholder="102"></div>
+      <div class="row"><div class="suit">♣</div><input id="sC" placeholder="KQ7642"></div>
+    </div>
+
+    <div class="seat">
+      <h3>OVEST</h3>
+      <div class="row"><div class="suit">♠</div><input id="wS" placeholder="Q8"></div>
+      <div class="row"><div class="suit">♥</div><input id="wH" placeholder="J2"></div>
+      <div class="row"><div class="suit">♦</div><input id="wD" placeholder="AKQJ9753"></div>
+      <div class="row"><div class="suit">♣</div><input id="wC" placeholder="8"></div>
+    </div>
   </div>
-</div>
 
-<div class="box">
-  <b>Output PBN</b>
-  <textarea id="outPBN" readonly></textarea>
-</div>
+  <div class="box split">
+    <b>Output LIN</b>
+    <textarea id="outLIN" readonly></textarea>
+    <div class="actions">
+      <button class="gray" id="btnCopyLin">Copia LIN</button>
+      <button id="btnDlLin">Scarica .lin</button>
+      <button id="btnOpenBSOL" disabled>Apri in Bridge Solver Online</button>
+      <button id="btnOpenBBO" disabled>Apri in BBO Handviewer</button>
+    </div>
+    <div class="small">
+      Nota: Bridge Solver Online si apre via URL con parametri (board/dealer/vul/north/east/south/west). :contentReference[oaicite:2]{index=2}<br>
+      Handviewer BBO accetta n/e/s/w (formato s…h…d…c…) + dealer/vul. :contentReference[oaicite:3]{index=3}
+    </div>
+  </div>
+
+  <div class="box">
+    <b>Output PBN</b>
+    <textarea id="outPBN" readonly></textarea>
+  </div>
 
 <script>
-const RANKS="AKQJT98765432";
-const $=id=>document.getElementById(id);
-const norm=t=>(t||"").toUpperCase().replace(/10/g,"T").replace(/[^AKQJT98765432]/g,"");
+  const $ = (id) => document.getElementById(id);
 
-function v(id){return norm($(id).value);}
-
-function readHands(){
-  return{
-    N:{S:v("nS"),H:v("nH"),D:v("nD"),C:v("nC")},
-    E:{S:v("eS"),H:v("eH"),D:v("eD"),C:v("eC")},
-    S:{S:v("sS"),H:v("sH"),D:v("sD"),C:v("sC")},
-    W:{S:v("wS"),H:v("wH"),D:v("wD"),C:v("wC")}
-  };
-}
-
-function validate(h){
-  let seen=new Set(),tot=0,err=[];
-  for(const p of["N","E","S","W"]){
-    let c=0;
-    for(const s of["S","H","D","C"]){
-      for(const r of h[p][s]){
-        tot++;c++;
-        const k=s+r;
-        if(seen.has(k))err.push("Doppione "+k);
-        seen.add(k);
-      }
-    }
-    if(c!==13)err.push("Seat "+p+": "+c+" carte");
+  // Normalizza: 10 -> T, rimuove spazi/simboli, lascia solo ranks
+  function normRanks(t){
+    return (t||"")
+      .toUpperCase()
+      .replace(/10/g,"T")
+      .replace(/[^AKQJT98765432]/g,"");
   }
-  return{ok:err.length===0&&tot===52,tot,err};
-}
 
-$("genBtn").onclick=()=>{
-  document.activeElement&&document.activeElement.blur();
-  setTimeout(()=>{
-    const h=readHands();
-    $("debug").textContent=
-`DEBUG
-N ${h.N.S}.${h.N.H}.${h.N.D}.${h.N.C}
-E ${h.E.S}.${h.E.H}.${h.E.D}.${h.E.C}
-S ${h.S.S}.${h.S.H}.${h.S.D}.${h.S.C}
-W ${h.W.S}.${h.W.H}.${h.W.D}.${h.W.C}`;
+  function readHands(){
+    return {
+      N:{S:normRanks($("nS").value),H:normRanks($("nH").value),D:normRanks($("nD").value),C:normRanks($("nC").value)},
+      E:{S:normRanks($("eS").value),H:normRanks($("eH").value),D:normRanks($("eD").value),C:normRanks($("eC").value)},
+      S:{S:normRanks($("sS").value),H:normRanks($("sH").value),D:normRanks($("sD").value),C:normRanks($("sC").value)},
+      W:{S:normRanks($("wS").value),H:normRanks($("wH").value),D:normRanks($("wD").value),C:normRanks($("wC").value)}
+    };
+  }
 
-    const vld=validate(h);
-    if(!vld.ok){
-      $("msg").innerHTML=`<span class="bad">KO (${vld.tot})</span>`;
+  function countCards(h){
+    const seen = new Set();
+    const errors = [];
+    const seats = ["N","E","S","W"];
+    const suits = ["S","H","D","C"];
+    let tot = 0;
+
+    for (const p of seats){
+      let c = 0;
+      for (const s of suits){
+        for (const r of h[p][s]){
+          tot++; c++;
+          const k = s + r;
+          if (seen.has(k)) errors.push("Doppione: " + k);
+          seen.add(k);
+        }
+      }
+      if (c !== 13) errors.push(`Seat ${p}: ${c} carte (attese 13)`);
+    }
+    if (tot !== 52) errors.push(`Totale carte: ${tot} (attese 52)`);
+
+    return { ok: errors.length === 0, tot, errors };
+  }
+
+  // BSOL wants suit order S.H.D.C separated by dots (10 as T)
+  function toBSOLSeatStr(seat){
+    return `${seat.S}.${seat.H}.${seat.D}.${seat.C}`;
+  }
+
+  // Handviewer wants "s...h...d...c..." concatenated
+  function toHVSeatStr(seat){
+    return `s${seat.S}h${seat.H}d${seat.D}c${seat.C}`.toLowerCase();
+  }
+
+  // Dealer/vul for this MVP: Dealer N, Vul None (come nel tuo esempio)
+  const BOARD_NO = 1;
+  const DEALER = "N";
+  const VUL_BSOL = "None"; // values: NS, EW, All, None  :contentReference[oaicite:4]{index=4}
+  const VUL_HV = "-";      // values: n, e, b, -  :contentReference[oaicite:5]{index=5}
+
+  function setStatus(ok){
+    $("status").className = ok ? "ok" : "bad";
+    $("status").textContent = ok ? "Validazione OK ✅" : "Validazione KO";
+    $("btnOpenBSOL").disabled = !ok;
+    $("btnOpenBBO").disabled = !ok;
+  }
+
+  function buildOutputs(h){
+    // PBN deal string: "N:spades.hearts.diamonds.clubs east south west" in one line
+    const n = toBSOLSeatStr(h.N);
+    const e = toBSOLSeatStr(h.E);
+    const s = toBSOLSeatStr(h.S);
+    const w = toBSOLSeatStr(h.W);
+
+    $("outPBN").value =
+`[Board "${BOARD_NO}"]
+[Dealer "${DEALER}"]
+[Vulnerable "None"]
+[Deal "N:${n} ${e} ${s} ${w}"]`;
+
+    // LIN minimal (deal only). md order commonly used: N, W, E, S (as you already used)
+    // We'll keep that order because BBO/solver accept it for "deal" part.
+    const md = `${h.N.S}${h.N.H}${h.N.D}${h.N.C},${h.W.S}${h.W.H}${h.W.D}${h.W.C},${h.E.S}${h.E.H}${h.E.D}${h.E.C},${h.S.S}${h.S.H}${h.S.D}${h.S.C}`;
+    $("outLIN").value = `pn|N,E,S,W|sv|o|bd|${BOARD_NO}|md|3${md}|`;
+  }
+
+  function buildBSOLUrl(h){
+    const base = "https://dds.bridgewebs.com/bsol2/ddummy.htm";
+    const params = new URLSearchParams({
+      board: String(BOARD_NO),
+      dealer: DEALER,
+      vul: VUL_BSOL,
+      north: toBSOLSeatStr(h.N),
+      east:  toBSOLSeatStr(h.E),
+      south: toBSOLSeatStr(h.S),
+      west:  toBSOLSeatStr(h.W),
+      analyse: "true",
+      club: "mk-easyhand",
+      event: "mk-easyhand"
+    });
+    return `${base}?${params.toString()}`;
+  }
+
+  function buildBBOHandviewerUrl(h){
+    const base = "https://www.bridgebase.com/tools/handviewer.html";
+    const params = new URLSearchParams({
+      b: String(BOARD_NO),
+      d: DEALER.toLowerCase(),
+      v: VUL_HV,
+      n: toHVSeatStr(h.N),
+      e: toHVSeatStr(h.E),
+      s: toHVSeatStr(h.S),
+      w: toHVSeatStr(h.W)
+    });
+    return `${base}?${params.toString()}`;
+  }
+
+  function debugDump(h, vld){
+    $("debug").textContent =
+`DEBUG LETTURA:
+N ♠=${h.N.S} ♥=${h.N.H} ♦=${h.N.D} ♣=${h.N.C}
+E ♠=${h.E.S} ♥=${h.E.H} ♦=${h.E.D} ♣=${h.E.C}
+S ♠=${h.S.S} ♥=${h.S.H} ♦=${h.S.D} ♣=${h.S.C}
+W ♠=${h.W.S} ♥=${h.W.H} ♦=${h.W.D} ♣=${h.W.C}
+
+Validazione:
+OK=${vld.ok}  tot=${vld.tot}
+${vld.errors.length ? ("Errori:\n- " + vld.errors.join("\n- ")) : "Nessun errore."}
+
+Tipo screenshot selezionato: ${$("shotType").value} (${ $("shotType").value==="A" ? "RealBridge" : "BBO" })`;
+  }
+
+  // Buttons
+  $("btnExample").onclick = () => {
+    $("nS").value="AJ542"; $("nH").value="K6543"; $("nD").value="64"; $("nC").value="9";
+    $("eS").value="973";   $("eH").value="10987"; $("eD").value="8";  $("eC").value="AJ1053";
+    $("sS").value="K106";  $("sH").value="AQ";    $("sD").value="102";$("sC").value="KQ7642";
+    $("wS").value="Q8";    $("wH").value="J2";    $("wD").value="AKQJ9753"; $("wC").value="8";
+  };
+
+  $("btnClear").onclick = () => {
+    for (const id of ["nS","nH","nD","nC","eS","eH","eD","eC","sS","sH","sD","sC","wS","wH","wD","wC"]) $(id).value="";
+    $("outLIN").value=""; $("outPBN").value="";
+    setStatus(false);
+    $("debug").textContent="DEBUG: svuotato.";
+  };
+
+  $("btnGen").onclick = () => {
+    // blur to force input commit on some browsers
+    document.activeElement && document.activeElement.blur();
+
+    const h = readHands();
+    const vld = countCards(h);
+    debugDump(h, vld);
+
+    setStatus(vld.ok);
+
+    if (!vld.ok){
+      $("outLIN").value = "";
+      $("outPBN").value = "";
       return;
     }
+    buildOutputs(h);
+  };
 
-    $("msg").innerHTML=`<span class="ok">OK</span>`;
+  $("btnCopyLin").onclick = async () => {
+    const t = $("outLIN").value || "";
+    if (!t.trim()) return;
+    await navigator.clipboard.writeText(t);
+  };
 
-    const N=`${h.N.S}.${h.N.H}.${h.N.D}.${h.N.C}`;
-    const E=`${h.E.S}.${h.E.H}.${h.E.D}.${h.E.C}`;
-    const S=`${h.S.S}.${h.S.H}.${h.S.D}.${h.S.C}`;
-    const W=`${h.W.S}.${h.W.H}.${h.W.D}.${h.W.C}`;
+  $("btnDlLin").onclick = () => {
+    const t = $("outLIN").value || "";
+    if (!t.trim()) return;
+    const blob = new Blob([t], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `board${BOARD_NO}.lin`;
+    a.click();
+  };
 
-    $("outPBN").value=
-`[Board "1"]
-[Dealer "N"]
-[Vulnerable "None"]
-[Deal "N:${N} ${E} ${S} ${W}"]`;
+  $("btnOpenBSOL").onclick = () => {
+    const h = readHands();
+    const vld = countCards(h);
+    if (!vld.ok) return;
+    const url = buildBSOLUrl(h);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
-    $("outLIN").value=
-`pn|N,E,S,W|sv|o|bd|1|md|3${h.N.S+h.N.H+h.N.D+h.N.C},${h.W.S+h.W.H+h.W.D+h.W.C},${h.E.S+h.E.H+h.E.D+h.E.C},${h.S.S+h.S.H+h.S.D+h.S.C}|`;
-  },0);
-};
+  $("btnOpenBBO").onclick = () => {
+    const h = readHands();
+    const vld = countCards(h);
+    if (!vld.ok) return;
+    const url = buildBBOHandviewerUrl(h);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
-$("copyLin").onclick=()=>navigator.clipboard.writeText($("outLIN").value);
-$("dlLin").onclick=()=>{
-  const b=new Blob([$(`outLIN`).value],{type:"text/plain"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(b);
-  a.download="board.lin";
-  a.click();
-};
+  // Initial state
+  setStatus(false);
 </script>
 
 </body>
