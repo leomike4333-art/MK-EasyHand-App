@@ -4,562 +4,751 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MK EasyHand App</title>
+
+  <!-- Tesseract.js (OCR) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f6f6f6;color:#111}
-    header{background:#eee;padding:14px 16px;border-bottom:1px solid #ddd}
-    h1{margin:0;font-size:22px}
-    .sub{margin:4px 0 0 0;color:#444;font-size:13px}
-    .wrap{max-width:980px;margin:14px auto;padding:0 12px}
-    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-    .card{background:#fff;border:1px solid #ddd;border-radius:10px;padding:12px}
-    .card h2{margin:0 0 8px 0;font-size:16px}
-    select, input[type="number"], input[type="text"]{padding:8px;border:1px solid #bbb;border-radius:8px}
-    button{padding:10px 12px;border:0;border-radius:10px;color:#fff;cursor:pointer}
-    .btn{background:#2563eb}
-    .btn2{background:#111827}
-    .btn3{background:#16a34a}
-    .btn4{background:#b91c1c}
-    button:disabled{opacity:.5;cursor:not-allowed}
-    .small{font-size:12px;color:#444}
-    #imgPreview{max-width:100%;border:1px solid #ccc;border-radius:10px;margin-top:8px;display:none}
-    #clickMsg{margin-top:6px}
-    #cropPreview{max-width:100%;border:1px dashed #999;border-radius:10px;margin-top:8px;display:none}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media (max-width:800px){.grid2{grid-template-columns:1fr}}
-    .handGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .handBox{background:#fff;border:1px solid #ddd;border-radius:10px;padding:10px}
-    .handTitle{font-weight:700;margin-bottom:6px}
-    .suitRow{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;margin:6px 0}
-    .suit{font-size:18px}
-    .out{width:100%;height:100px;border:1px solid #bbb;border-radius:10px;padding:8px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px}
-    .ok{background:#dcfce7;color:#166534;border:1px solid #86efac}
-    .ko{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-size:12px;white-space:pre-wrap}
+    :root{
+      --bg:#f6f7f9; --card:#fff; --text:#111827; --muted:#6b7280;
+      --ok:#16a34a; --bad:#dc2626; --blue:#2563eb; --border:#e5e7eb;
+      --shadow:0 10px 30px rgba(0,0,0,.06);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    header{background:#fff;border-bottom:1px solid var(--border)}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    h1{margin:0;font-size:28px}
+    .sub{margin-top:6px;color:var(--muted)}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card .in{padding:14px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--muted);font-size:12px}
+    .btn{
+      border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;
+      background:#111827;color:#fff
+    }
+    .btn.secondary{background:#374151}
+    .btn.blue{background:var(--blue)}
+    .btn.green{background:var(--ok)}
+    .btn.red{background:var(--bad)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    select,input[type="number"],input[type="text"]{
+      padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#fff
+    }
+    input[type="file"]{padding:8px;border-radius:12px;border:1px solid var(--border);background:#fff}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    .small{font-size:12px;color:var(--muted)}
+    .status{
+      font-weight:800;display:inline-flex;align-items:center;gap:10px;
+      padding:8px 12px;border-radius:12px;border:1px solid var(--border);background:#fff
+    }
+    .status.ok{color:var(--ok)}
+    .status.bad{color:var(--bad)}
+    .imgBox{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff}
+    #imgPreview{display:none;max-width:100%;height:auto;cursor:crosshair}
+    .clickline{margin-top:8px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    textarea{
+      width:100%;min-height:130px;border:1px solid var(--border);border-radius:14px;padding:10px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace
+    }
+    .hands{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:900px){.hands{grid-template-columns:1fr}}
+    .handcard{border:1px solid var(--border);border-radius:16px;background:#fff}
+    .handcard .title{padding:10px 12px;border-bottom:1px solid var(--border);font-weight:900}
+    .handcard .body{padding:12px}
+    .suitRow{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:center;margin:8px 0}
+    .suitIcon{font-size:18px}
+    .s{color:#2563eb} .h{color:#dc2626} .d{color:#f59e0b} .c{color:#16a34a}
+    .twoCols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:900px){.twoCols{grid-template-columns:1fr}}
+    .hint{margin-top:10px;padding:10px;border:1px dashed var(--border);border-radius:14px;background:#fff;color:var(--muted)}
+    .kbd{font-family:ui-monospace;background:#f3f4f6;border:1px solid #e5e7eb;padding:2px 6px;border-radius:8px;color:#111827}
   </style>
 </head>
+
 <body>
 <header>
-  <h1>MK EasyHand App</h1>
-  <div class="sub">Screenshot → Paste → Click suit icon → OCR → Generate LIN/PBN → Open Solver / BBO</div>
+  <div class="wrap">
+    <h1>MK EasyHand App</h1>
+    <div class="sub">Screenshot → Paste / Upload → <b>Click a suit symbol</b> → Generate LIN → Open Solver / BBO</div>
+  </div>
 </header>
 
 <div class="wrap">
-
   <div class="card">
-    <div class="row">
-      <label class="small"><b>Source:</b></label>
-      <select id="sourceSel">
-        <option value="A">A — RealBridge</option>
-        <option value="B">B — BBO</option>
-        <option value="C" selected>C — Federation / Local (FIGB)</option>
-        <option value="D">D — LoveBridge (WBF)</option>
-        <option value="E">E — Bulletin (ACBL/EBL/WBF)</option>
-      </select>
-
-      <button id="pasteBtn" class="btn">📋 Paste</button>
-      <input type="file" id="fileInput" accept="image/*" />
-
-      <span id="imgMsg" class="small"></span>
-
-      <button id="ocrBtn" class="btn3" disabled>🔎 OCR from click (S/H/D/C)</button>
-      <button id="clearBtn" class="btn4">Clear</button>
-    </div>
-
-    <div class="small" style="margin-top:8px">
-      <b>How it works:</b> paste/upload → click near a suit icon (♠/♥/♦/♣) next to the cards → press OCR.<br/>
-      Best for FIGB / “vertical” screenshots. You can repeat OCR for different seats if you want.
-    </div>
-
-    <img id="imgPreview" alt="preview" />
-    <div id="clickMsg" class="small"></div>
-
-    <canvas id="cropCanvas" style="display:none"></canvas>
-    <img id="cropPreview" alt="crop preview" />
-    <div id="ocrText" class="mono" style="margin-top:8px"></div>
-  </div>
-
-  <div class="card" style="margin-top:12px">
-    <div class="row" style="justify-content:space-between;gap:12px">
-      <div>
-        <b>Status:</b>
-        <span id="valPill" class="pill ko">Validation: KO</span>
-        <span id="valMsg" class="small"></span>
-      </div>
+    <div class="in">
       <div class="row">
-        <button id="genBtn" class="btn3">Generate LIN / PBN (validate)</button>
+        <label><b>Source:</b></label>
+        <select id="sourceSel">
+          <option value="A">A – RealBridge</option>
+          <option value="B">B – BBO</option>
+          <option value="C" selected>C – Federation / Local (FIGB)</option>
+          <option value="D">D – LoveBridge / WBF</option>
+        </select>
+
+        <button class="btn blue" id="pasteBtn">📋 Paste</button>
+        <input type="file" id="fileInput" accept="image/*">
+
+        <span id="imgMsg" class="pill">No image yet.</span>
+
+        <span class="status bad" id="statusBadge">Validation: KO ✖</span>
+
+        <button class="btn green" id="genBtn">Generate LIN/PBN (validate)</button>
+      </div>
+
+      <div class="hint">
+        <b>FIGB mode (Source C):</b> paste/upload → <b>click directly on a suit icon</b> (♠/♥/♦/♣) near the hand you want to read.
+        OCR is “restricted” (only AKQJT98765432, 10→T).<br/>
+        Tip: If needed, use <span class="kbd">Ctrl+F5</span> or add <span class="kbd">?v=123</span> to your URL to bypass cache.
       </div>
     </div>
   </div>
 
-  <div class="handGrid" style="margin-top:12px">
+  <div style="height:14px"></div>
 
-    <div class="handBox">
-      <div class="handTitle">North</div>
-      <div class="suitRow"><div class="suit">♠</div><input id="nS" type="text" placeholder="e.g. AKQJ" /></div>
-      <div class="suitRow"><div class="suit">♥</div><input id="nH" type="text" placeholder="e.g. T987" /></div>
-      <div class="suitRow"><div class="suit">♦</div><input id="nD" type="text" placeholder="e.g. 642" /></div>
-      <div class="suitRow"><div class="suit">♣</div><input id="nC" type="text" placeholder="e.g. A73" /></div>
+  <div class="grid">
+    <!-- LEFT: image -->
+    <div class="card">
+      <div class="in">
+        <div class="imgBox">
+          <img id="imgPreview" alt="preview">
+        </div>
+        <div class="clickline small mono" id="clickMsg"></div>
+        <div class="small" style="margin-top:8px">
+          <b>Status:</b> <span id="flowMsg">Paste or upload an image.</span>
+        </div>
+      </div>
     </div>
 
-    <div class="handBox">
-      <div class="handTitle">East</div>
-      <div class="suitRow"><div class="suit">♠</div><input id="eS" type="text" /></div>
-      <div class="suitRow"><div class="suit">♥</div><input id="eH" type="text" /></div>
-      <div class="suitRow"><div class="suit">♦</div><input id="eD" type="text" /></div>
-      <div class="suitRow"><div class="suit">♣</div><input id="eC" type="text" /></div>
-    </div>
+    <!-- RIGHT: debug + outputs -->
+    <div class="card">
+      <div class="in">
+        <div class="small"><b>Debug</b> (last run)</div>
+        <textarea id="debugOut" readonly class="mono" style="min-height:160px"></textarea>
 
-    <div class="handBox">
-      <div class="handTitle">South</div>
-      <div class="suitRow"><div class="suit">♠</div><input id="sS" type="text" /></div>
-      <div class="suitRow"><div class="suit">♥</div><input id="sH" type="text" /></div>
-      <div class="suitRow"><div class="suit">♦</div><input id="sD" type="text" /></div>
-      <div class="suitRow"><div class="suit">♣</div><input id="sC" type="text" /></div>
-    </div>
+        <div style="height:10px"></div>
 
-    <div class="handBox">
-      <div class="handTitle">West</div>
-      <div class="suitRow"><div class="suit">♠</div><input id="wS" type="text" /></div>
-      <div class="suitRow"><div class="suit">♥</div><input id="wH" type="text" /></div>
-      <div class="suitRow"><div class="suit">♦</div><input id="wD" type="text" /></div>
-      <div class="suitRow"><div class="suit">♣</div><input id="wC" type="text" /></div>
-    </div>
+        <div class="twoCols">
+          <div>
+            <div class="small"><b>LIN output</b></div>
+            <textarea id="linOut" readonly class="mono"></textarea>
+            <div class="row" style="margin-top:10px">
+              <button class="btn secondary" id="copyLinBtn">Copy LIN</button>
+              <button class="btn blue" id="dlLinBtn">Download .lin</button>
+            </div>
+          </div>
 
+          <div>
+            <div class="small"><b>PBN output</b></div>
+            <textarea id="pbnOut" readonly class="mono"></textarea>
+            <div class="small" style="margin-top:10px">
+              PBN is useful for many solvers/tools. LIN is best for BBO / quick sharing.
+            </div>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="row">
+          <button class="btn secondary" id="openBsolBtn">Open Bridge Solver Online</button>
+          <button class="btn secondary" id="openBboBtn">Open BBO Handviewer</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="grid2" style="margin-top:12px">
-    <div class="card">
-      <h2>LIN output</h2>
-      <textarea id="linOut" class="out" readonly></textarea>
+  <div style="height:14px"></div>
+
+  <!-- Manual input fallback -->
+  <div class="card">
+    <div class="in">
+      <div class="small"><b>Manual hand input</b> (optional)</div>
+      <div class="small">Allowed ranks: <span class="mono">AKQJT98765432</span> (10 or T). No spaces.</div>
+
+      <div style="height:10px"></div>
+
+      <div class="hands">
+        <div class="handcard">
+          <div class="title">North</div>
+          <div class="body">
+            <div class="suitRow"><div class="suitIcon s">♠</div><input id="nS" type="text" placeholder="e.g. AKQJ" /></div>
+            <div class="suitRow"><div class="suitIcon h">♥</div><input id="nH" type="text" placeholder="e.g. T987" /></div>
+            <div class="suitRow"><div class="suitIcon d">♦</div><input id="nD" type="text" placeholder="e.g. 642" /></div>
+            <div class="suitRow"><div class="suitIcon c">♣</div><input id="nC" type="text" placeholder="e.g. A73" /></div>
+          </div>
+        </div>
+
+        <div class="handcard">
+          <div class="title">South</div>
+          <div class="body">
+            <div class="suitRow"><div class="suitIcon s">♠</div><input id="sS" type="text" /></div>
+            <div class="suitRow"><div class="suitIcon h">♥</div><input id="sH" type="text" /></div>
+            <div class="suitRow"><div class="suitIcon d">♦</div><input id="sD" type="text" /></div>
+            <div class="suitRow"><div class="suitIcon c">♣</div><input id="sC" type="text" /></div>
+          </div>
+        </div>
+
+        <div class="handcard">
+          <div class="title">East</div>
+          <div class="body">
+            <div class="suitRow"><div class="suitIcon s">♠</div><input id="eS" type="text" /></div>
+            <div class="suitRow"><div class="suitIcon h">♥</div><input id="eH" type="text" /></div>
+            <div class="suitRow"><div class="suitIcon d">♦</div><input id="eD" type="text" /></div>
+            <div class="suitRow"><div class="suitIcon c">♣</div><input id="eC" type="text" /></div>
+          </div>
+        </div>
+
+        <div class="handcard">
+          <div class="title">West</div>
+          <div class="body">
+            <div class="suitRow"><div class="suitIcon s">♠</div><input id="wS" type="text" /></div>
+            <div class="suitRow"><div class="suitIcon h">♥</div><input id="wH" type="text" /></div>
+            <div class="suitRow"><div class="suitIcon d">♦</div><input id="wD" type="text" /></div>
+            <div class="suitRow"><div class="suitIcon c">♣</div><input id="wC" type="text" /></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:10px"></div>
       <div class="row">
-        <button id="copyLin" class="btn2">Copy LIN</button>
-        <button id="dlLin" class="btn">Download .lin</button>
-        <button id="openSolver" class="btn2">Open Bridge Solver Online</button>
-        <button id="openBBO" class="btn2">Open BBO Handviewer</button>
+        <button class="btn secondary" id="loadSampleBtn">Load sample</button>
+        <button class="btn red" id="clearBtn">Clear</button>
       </div>
-      <div class="small" style="margin-top:6px">
-        Tip: if you don’t see changes on GitHub Pages, hard-refresh (Ctrl+F5) or change URL like <span class="mono">?v=123</span>.
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>PBN output</h2>
-      <textarea id="pbnOut" class="out" readonly></textarea>
-      <div class="small">
-        PBN is useful for many solvers / tools. LIN is best for BBO / quick sharing.
-      </div>
-      <h2 style="margin-top:10px">Debug</h2>
-      <div id="dbg" class="mono"></div>
     </div>
   </div>
-
 </div>
 
-<!-- Tesseract.js (OCR in browser) -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
 <script>
-/* -------------------------
-  Helpers
-------------------------- */
+/* ===========================
+   Helpers
+=========================== */
 const $ = (id)=>document.getElementById(id);
 
 const imgPreview = $("imgPreview");
-const cropCanvas = $("cropCanvas");
-const cropPreview = $("cropPreview");
-const imgMsg = $("imgMsg");
-const clickMsg = $("clickMsg");
-const ocrBtn = $("ocrBtn");
-const ocrText = $("ocrText");
-const sourceSel = $("sourceSel");
-const dbg = $("dbg");
+const fileInput  = $("fileInput");
+const pasteBtn   = $("pasteBtn");
+const imgMsg     = $("imgMsg");
+const clickMsg   = $("clickMsg");
+const flowMsg    = $("flowMsg");
+const sourceSel  = $("sourceSel");
 
-let lastClick = null;        // {x,y} in image pixel coords
-let loadedImage = null;      // HTMLImageElement
-let imgScale = 1;            // display scale (for click mapping)
+const genBtn     = $("genBtn");
+const debugOut   = $("debugOut");
+const linOut     = $("linOut");
+const pbnOut     = $("pbnOut");
+const statusBadge= $("statusBadge");
 
-/* normalize ranks: accept 10 or T; remove spaces; uppercase */
-function normRanks(s){
+const copyLinBtn = $("copyLinBtn");
+const dlLinBtn   = $("dlLinBtn");
+const openBsolBtn= $("openBsolBtn");
+const openBboBtn = $("openBboBtn");
+
+const loadSampleBtn = $("loadSampleBtn");
+const clearBtn      = $("clearBtn");
+
+const inputs = {
+  nS:$("nS"), nH:$("nH"), nD:$("nD"), nC:$("nC"),
+  eS:$("eS"), eH:$("eH"), eD:$("eD"), eC:$("eC"),
+  sS:$("sS"), sH:$("sH"), sD:$("sD"), sC:$("sC"),
+  wS:$("wS"), wH:$("wH"), wD:$("wD"), wC:$("wC"),
+};
+
+function normalizeRanks(s){
   if(!s) return "";
-  s = (""+s).toUpperCase().replace(/\s+/g,"");
-  s = s.replace(/10/g,"T");
-  // keep only AKQJT98765432
-  s = s.replace(/[^AKQJT98765432]/g,"");
-  return s;
+  return s.toUpperCase()
+    .replace(/\s+/g,"")
+    .replace(/10/g,"T")
+    .replace(/[^AKQJT98765432]/g,"");
+}
+function countChars(s){ return (s||"").length; }
+
+function buildPBN(dealer="N", vul="None", hands){
+  // PBN "Deal" format: N:spades.hearts.diamonds.clubs (for N, E, S, W)
+  // We'll output minimal PBN.
+  const fmt = (h)=>`${h.S||""}.${h.H||""}.${h.D||""}.${h.C||""}`;
+  return [
+    '[Event "MK EasyHand"]',
+    '[Site "GitHub Pages"]',
+    `[Dealer "${dealer}"]`,
+    `[Vulnerable "${vul}"]`,
+    `[Deal "N:${fmt(hands.N)} ${fmt(hands.E)} ${fmt(hands.S)} ${fmt(hands.W)}"]`,
+  ].join("\n");
 }
 
-/* write to inputs */
-function setHand(seat, sp, he, di, cl){
-  $(seat+"S").value = normRanks(sp);
-  $(seat+"H").value = normRanks(he);
-  $(seat+"D").value = normRanks(di);
-  $(seat+"C").value = normRanks(cl);
+function buildLIN(board=1, dealer="N", vul="o", hands){
+  // Minimal LIN for BBO is not perfectly standardized across all tools,
+  // but BBO Handviewer accepts "s=..h=..d=..c=.." blocks (we build those too in URL).
+  // We'll output a simple "md|" deal string used by many LIN snippets.
+  // Order in md: N, E, S, W with commas.
+  const pack = (h)=>`${h.S||""}${h.H||""}${h.D||""}${h.C||""}`;
+  // NOTE: we keep commas; external tools interpret.
+  return `pn|N,E,S,W|sv|${vul}|bd|${board}|md|3${pack(hands.N)},${pack(hands.E)},${pack(hands.S)},${pack(hands.W)}|`;
 }
 
-/* count cards */
-function countCards(s){ return (s||"").length; }
-
-/* validate 52 cards, no duplicates */
-function validateAll(){
-  const seats = ["n","e","s","w"];
-  const suits = ["S","H","D","C"];
-  let all = [];
-  let perSeat = {};
-  let errors = [];
-
-  for(const seat of seats){
-    perSeat[seat]=0;
-    for(const su of suits){
-      const v = normRanks($(seat+su).value);
-      $(seat+su).value = v;
-      perSeat[seat] += v.length;
-      for(const ch of v){
-        all.push(seat+su+ch); // id with suit+rank
-      }
-    }
-    if(perSeat[seat]!==13){
-      errors.push(`Seat ${seat.toUpperCase()}: ${perSeat[seat]} cards (expected 13)`);
-    }
-  }
-
-  // duplicates by suit+rank across seats
-  // build true identity suit+rank (ignore seat)
-  const id = [];
-  for(const seat of seats){
-    for(const su of suits){
-      const v = normRanks($(seat+su).value);
-      for(const ch of v){
-        id.push(su+ch);
-      }
-    }
-  }
-  const freq = {};
-  for(const x of id) freq[x]=(freq[x]||0)+1;
-  const dups = Object.entries(freq).filter(([k,v])=>v>1);
-  if(dups.length){
-    errors.push("Duplicates: " + dups.map(([k,v])=>`${k}×${v}`).join(", "));
-  }
-
-  const total = id.length;
-  if(total!==52) errors.push(`Total cards: ${total} (expected 52)`);
-
-  const ok = errors.length===0;
-  $("valPill").className = "pill " + (ok ? "ok":"ko");
-  $("valPill").textContent = "Validation: " + (ok ? "OK ✅":"KO ❌");
-  $("valMsg").textContent = ok ? "" : (" — " + errors[0]);
-  dbg.textContent = `Validation: OK=${ok}  total=${total}\n` + (errors.length?("Errors:\n- "+errors.join("\n- ")):"No errors.");
-  return ok;
+function setStatus(ok, msg=""){
+  statusBadge.className = "status " + (ok ? "ok" : "bad");
+  statusBadge.textContent = ok ? "Validation: OK ✔" : "Validation: KO ✖";
+  if(msg) flowMsg.textContent = msg;
 }
 
-/* build LIN + PBN (minimal) */
-function buildLIN(){
-  // Format for BBO-like deal: md|<dealer><hands...> is variable; we use a simple "md|1" style with N as dealer for now.
-  // We'll keep dealer/vul out for now (as you requested). Users can change in Solver anyway.
-  // hands order: N,E,S,W in S,H,D,C with commas
-  const n = `S${$("nS").value}H${$("nH").value}D${$("nD").value}C${$("nC").value}`;
-  const e = `S${$("eS").value}H${$("eH").value}D${$("eD").value}C${$("eC").value}`;
-  const s = `S${$("sS").value}H${$("sH").value}D${$("sD").value}C${$("sC").value}`;
-  const w = `S${$("wS").value}H${$("wH").value}D${$("wD").value}C${$("wC").value}`;
-  // Simple LIN; many viewers accept: md|1<deal>| where 1=North dealer; we keep it consistent.
-  return `pn|N,E,S,W|sv|o|bd|1|md|1${n},${e},${s},${w}|`;
-}
-function buildPBN(){
-  // PBN Deal: "N:... ... ... ..."
-  const N = `${$("nS").value}.${$("nH").value}.${$("nD").value}.${$("nC").value}`;
-  const E = `${$("eS").value}.${$("eH").value}.${$("eD").value}.${$("eC").value}`;
-  const S = `${$("sS").value}.${$("sH").value}.${$("sD").value}.${$("sC").value}`;
-  const W = `${$("wS").value}.${$("wH").value}.${$("wD").value}.${$("wC").value}`;
-  return `[Deal "N:${N} ${E} ${S} ${W}"]`;
+function clearOutputs(){
+  debugOut.value = "";
+  linOut.value = "";
+  pbnOut.value = "";
 }
 
-/* -------------------------
-  Image load: paste / file
-------------------------- */
-$("pasteBtn").addEventListener("click", async ()=>{
-  try{
-    const items = await navigator.clipboard.read();
-    for(const item of items){
-      for(const type of item.types){
-        if(type.startsWith("image/")){
-          const blob = await item.getType(type);
-          const url = URL.createObjectURL(blob);
-          await loadImage(url);
-          imgMsg.textContent = "Image pasted from clipboard ✅";
-          return;
+function validateAll(h){
+  // h: {N:{S,H,D,C}, E..., S..., W...}
+  const seatCounts = {
+    N: countChars(h.N.S)+countChars(h.N.H)+countChars(h.N.D)+countChars(h.N.C),
+    E: countChars(h.E.S)+countChars(h.E.H)+countChars(h.E.D)+countChars(h.E.C),
+    S: countChars(h.S.S)+countChars(h.S.H)+countChars(h.S.D)+countChars(h.S.C),
+    W: countChars(h.W.S)+countChars(h.W.H)+countChars(h.W.D)+countChars(h.W.C),
+  };
+  const total = seatCounts.N + seatCounts.E + seatCounts.S + seatCounts.W;
+
+  // duplicates check
+  const seen = new Map();
+  const dups = [];
+  for(const seat of ["N","E","S","W"]){
+    for(const suit of ["S","H","D","C"]){
+      const str = h[seat][suit] || "";
+      for(const ch of str){
+        const key = suit + ch;
+        const prev = seen.get(key);
+        if(prev && prev !== seat){
+          dups.push(`${key} in ${prev}+${seat}`);
+        }else if(prev && prev === seat){
+          // duplicate within same seat (rare unless OCR repeats)
+          dups.push(`${key} twice in ${seat}`);
+        }else{
+          seen.set(key, seat);
         }
       }
     }
-    imgMsg.textContent = "No image found in clipboard.";
-  }catch(e){
-    imgMsg.textContent = "Paste blocked by browser. Try Ctrl+V or use file input.";
   }
-});
 
-$("fileInput").addEventListener("change", async ()=>{
-  const f = $("fileInput").files && $("fileInput").files[0];
-  if(!f) return;
-  const url = URL.createObjectURL(f);
-  await loadImage(url);
-  imgMsg.textContent = "Image loaded ✅";
-});
+  const errs = [];
+  for(const seat of ["N","E","S","W"]){
+    if(seatCounts[seat] !== 13) errs.push(`Seat ${seat}: ${seatCounts[seat]} cards (expected 13)`);
+  }
+  if(total !== 52) errs.push(`Total cards: ${total} (expected 52)`);
+  if(dups.length) errs.push(`Duplicates: ${dups.slice(0,12).join(", ")}${dups.length>12?" ...":""}`);
 
-async function loadImage(url){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.onload = ()=>{
-      loadedImage = img;
-      imgPreview.src = url;
-      imgPreview.style.display = "block";
-      cropPreview.style.display = "none";
-      ocrText.textContent = "";
-      clickMsg.textContent = "Click near a suit icon (♠/♥/♦/♣) to set OCR anchor.";
-      lastClick = null;
-      ocrBtn.disabled = true;
-      resolve();
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
+  return { ok: errs.length===0, total, seatCounts, errs };
 }
 
-/* click mapping */
-imgPreview.addEventListener("click", (ev)=>{
-  if(!loadedImage) return;
+/* ===========================
+   Image handling (paste/upload)
+=========================== */
+let currentImage = null; // HTMLImageElement
+let canvas = document.createElement("canvas");
+let ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+function loadImageFromBlob(blob){
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    currentImage = img;
+    imgPreview.src = url;
+    imgPreview.style.display = "block";
+    imgMsg.textContent = "Image loaded ✅";
+    flowMsg.textContent = "Image ready. Click on a suit symbol (FIGB) or use manual input.";
+    clickMsg.textContent = "";
+    setStatus(false, "Image ready. Click a suit icon, then Generate.");
+    clearOutputs();
+  };
+  img.onerror = () => alert("Cannot load image.");
+  img.src = url;
+}
+
+pasteBtn.addEventListener("click", async () => {
+  try{
+    const items = await navigator.clipboard.read();
+    for(const it of items){
+      const type = it.types.find(t => t.startsWith("image/"));
+      if(type){
+        const blob = await it.getType(type);
+        loadImageFromBlob(blob);
+        return;
+      }
+    }
+    alert("No image found in clipboard. Copy a screenshot first.");
+  }catch(e){
+    alert("Paste failed. Try Ctrl+V on this page or use file upload.\n\n" + e);
+  }
+});
+
+window.addEventListener("paste", (ev)=>{
+  const dt = ev.clipboardData;
+  if(!dt) return;
+  const file = Array.from(dt.files || []).find(f => f.type.startsWith("image/"));
+  if(file){
+    loadImageFromBlob(file);
+  }
+});
+
+fileInput.addEventListener("change", ()=>{
+  const f = fileInput.files && fileInput.files[0];
+  if(!f) return;
+  loadImageFromBlob(f);
+});
+
+/* ===========================
+   FIGB: symbol-anchored OCR (single player)
+   User clicks on any suit icon; we detect that icon blob and read the 4 suit rows for that player.
+=========================== */
+function drawToCanvas(){
+  if(!currentImage) return;
+  canvas.width = currentImage.naturalWidth || currentImage.width;
+  canvas.height= currentImage.naturalHeight || currentImage.height;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(currentImage, 0, 0);
+}
+
+function imgToCanvasXY(clientX, clientY){
   const r = imgPreview.getBoundingClientRect();
-  const cx = ev.clientX - r.left;
-  const cy = ev.clientY - r.top;
-  // map to image pixels
-  const sx = loadedImage.width / r.width;
-  const sy = loadedImage.height / r.height;
-  const x = Math.round(cx * sx);
-  const y = Math.round(cy * sy);
-  lastClick = {x,y};
-  ocrBtn.disabled = false;
-  clickMsg.textContent = `Clicked at x=${x}, y=${y} (image px). Now press OCR.`;
-});
+  const nx = (clientX - r.left) / r.width;
+  const ny = (clientY - r.top)  / r.height;
+  const x = Math.max(0, Math.min(canvas.width-1, Math.round(nx * canvas.width)));
+  const y = Math.max(0, Math.min(canvas.height-1, Math.round(ny * canvas.height)));
+  return {x,y,nx,ny};
+}
 
-/* -------------------------
-  OCR from click (anchor = suit icons)
-  Strategy (MVP):
-  - crop a rectangle around click that should include 4 lines (S/H/D/C + ranks)
-  - run OCR on crop
-  - parse the 4 suit lines
-------------------------- */
+function rgbAt(x,y){
+  const d = ctx.getImageData(x,y,1,1).data;
+  return {r:d[0], g:d[1], b:d[2], a:d[3]};
+}
 
-$("ocrBtn").addEventListener("click", async ()=>{
-  if(!loadedImage || !lastClick) return;
-
-  const src = sourceSel.value;
-
-  // Heuristic crop sizes by source (tuned for FIGB vertical; still works for others)
-  let W = 360, H = 360, xPadLeft = 30, yPadTop = 30;
-
-  if(src==="C"){ // FIGB: symbols left, ranks right (vertical)
-    W = 420; H = 420; xPadLeft = 40; yPadTop = 50;
-  } else if(src==="B"){ // BBO: more compact
-    W = 360; H = 360; xPadLeft = 40; yPadTop = 40;
-  } else if(src==="A"){ // RealBridge
-    W = 380; H = 380; xPadLeft = 40; yPadTop = 40;
-  } else if(src==="D"){ // LoveBridge cards in small boxes
-    W = 420; H = 420; xPadLeft = 60; yPadTop = 60;
-  } else if(src==="E"){ // Bulletin (often very clean, but can be small)
-    W = 480; H = 420; xPadLeft = 60; yPadTop = 50;
-  }
-
-  const x0 = Math.max(0, lastClick.x - xPadLeft);
-  const y0 = Math.max(0, lastClick.y - yPadTop);
-  const x1 = Math.min(loadedImage.width, x0 + W);
-  const y1 = Math.min(loadedImage.height, y0 + H);
-
-  // draw crop to canvas
-  cropCanvas.width = x1-x0;
-  cropCanvas.height = y1-y0;
-  const ctx = cropCanvas.getContext("2d");
-  ctx.drawImage(loadedImage, x0, y0, x1-x0, y1-y0, 0, 0, x1-x0, y1-y0);
-
-  // show crop preview
-  cropPreview.src = cropCanvas.toDataURL("image/png");
-  cropPreview.style.display = "block";
-
-  ocrText.textContent = "OCR running… (first time may be slower)";
-
-  // OCR
-  const { data } = await Tesseract.recognize(cropCanvas, "eng", {
-    logger: m => { /* console.log(m) */ }
-  });
-
-  const raw = (data && data.text) ? data.text : "";
-  ocrText.textContent = "OCR text:\n" + raw;
-
-  // Parse: try to find four lines corresponding to suits.
-  // We accept either actual suit symbols or letters S/H/D/C.
-  // We'll build a best-effort extraction from the OCR output.
-  const parsed = parseSuitBlock(raw);
-
-  // Decide where to place (which seat): we keep it simple:
-  // user picks the seat by clicking near its suit icons; we ask them via a prompt? (avoid).
-  // MVP: we fill first empty seat among N/E/S/W.
-  const seat = firstEmptySeat();
-  if(!seat){
-    // if none empty, overwrite South (common) to make behavior deterministic
-    fillSeat("s", parsed);
-  } else {
-    fillSeat(seat, parsed);
-  }
-
-  validateAll();
-});
-
-/* find first seat with all suits empty */
-function firstEmptySeat(){
-  const seats = ["n","e","s","w"];
-  for(const seat of seats){
-    const allEmpty = ["S","H","D","C"].every(su => !$(seat+su).value);
-    if(allEmpty) return seat;
-  }
+// crude color classifiers for FIGB suit icons
+function classifySuitColor({r,g,b}){
+  // spade: blue-ish
+  if(b > 140 && r < 120 && g < 160) return "S";
+  // heart: red
+  if(r > 160 && g < 110 && b < 120) return "H";
+  // diamond: orange
+  if(r > 170 && g > 90 && g < 170 && b < 120) return "D";
+  // club: green
+  if(g > 140 && r < 140 && b < 140) return "C";
   return null;
 }
 
-function fillSeat(seat, parsed){
-  // parsed = {S,H,D,C}
-  $(seat+"S").value = normRanks(parsed.S||"");
-  $(seat+"H").value = normRanks(parsed.H||"");
-  $(seat+"D").value = normRanks(parsed.D||"");
-  $(seat+"C").value = normRanks(parsed.C||"");
+function floodBlobBBox(seedX, seedY, suit, maxPx=9000){
+  // BFS flood fill around clicked pixel collecting same suit color class
+  const q = [[seedX,seedY]];
+  const visited = new Set();
+  let minX=seedX, maxX=seedX, minY=seedY, maxY=seedY;
+  let count=0;
+
+  const key = (x,y)=> (y<<16) ^ x;
+  const inBounds = (x,y)=> x>=0 && y>=0 && x<canvas.width && y<canvas.height;
+
+  while(q.length && count < maxPx){
+    const [x,y] = q.pop();
+    const k = key(x,y);
+    if(visited.has(k)) continue;
+    visited.add(k);
+
+    const c = rgbAt(x,y);
+    const s = classifySuitColor(c);
+    if(s !== suit) continue;
+
+    count++;
+    if(x<minX) minX=x; if(x>maxX) maxX=x;
+    if(y<minY) minY=y; if(y>maxY) maxY=y;
+
+    // neighbors (4-connect)
+    if(inBounds(x+1,y)) q.push([x+1,y]);
+    if(inBounds(x-1,y)) q.push([x-1,y]);
+    if(inBounds(x,y+1)) q.push([x,y+1]);
+    if(inBounds(x,y-1)) q.push([x,y-1]);
+  }
+
+  if(count < 60) return null; // too small to be an icon blob
+  return {minX, maxX, minY, maxY, count};
 }
 
-/* Parse OCR text into {S,H,D,C}.
-   Strategy:
-   - split lines, normalize
-   - detect lines containing suit markers or starting with suit letter
-   - extract ranks substring after the marker
-*/
-function parseSuitBlock(text){
-  const lines = (text||"")
-    .split(/\r?\n/)
-    .map(x=>x.trim())
-    .filter(x=>x.length);
-
-  // Normalize symbols to letters to help parsing
-  const normLine = (s)=>s
-    .replace(/♠/g,"S")
-    .replace(/♥/g,"H")
-    .replace(/♦/g,"D")
-    .replace(/♣/g,"C")
-    .replace(/[^A-Za-z0-9]/g," "); // keep alnum separated
-
-  const out = {S:"",H:"",D:"",C:""};
-
-  // pass 1: look for explicit suit prefix at line start
-  for(const L0 of lines){
-    const L = normLine(L0).trim().toUpperCase();
-    // patterns like "S AJ542" or "H K6543"
-    const m = L.match(/^([SHDC])\s+(.+)$/);
-    if(m){
-      out[m[1]] = normRanks(m[2]);
-    }
-  }
-
-  // pass 2: if missing, try to find any line containing a suit letter then ranks
-  if(!out.S || !out.H || !out.D || !out.C){
-    for(const L0 of lines){
-      const L = normLine(L0).trim().toUpperCase();
-      // find segments like "S AJ542" inside the line
-      const rx = /([SHDC])\s+([AKQJT0-9]+)/g;
-      let mm;
-      while((mm = rx.exec(L)) !== null){
-        const su = mm[1];
-        const ranks = mm[2];
-        if(!out[su]) out[su] = normRanks(ranks);
-      }
-    }
-  }
-
-  // If OCR collapsed into one line without suit markers,
-  // we fallback to "best guess": pick the 4 longest rank strings in order S,H,D,C.
-  if(!(out.S && out.H && out.D && out.C)){
-    const candidates = [];
-    for(const L0 of lines){
-      const s = normRanks(L0);
-      if(s.length>=1) candidates.push(s);
-    }
-    candidates.sort((a,b)=>b.length-a.length);
-    // naive assign if still empty
-    const order = ["S","H","D","C"];
-    let idx=0;
-    for(const su of order){
-      if(!out[su] && candidates[idx]) out[su]=candidates[idx++];
-    }
-  }
-
-  return out;
+function cropToDataURL(x,y,w,h){
+  const tmp = document.createElement("canvas");
+  tmp.width = w; tmp.height = h;
+  const tctx = tmp.getContext("2d");
+  tctx.drawImage(canvas, x,y,w,h, 0,0,w,h);
+  return tmp.toDataURL("image/png");
 }
 
-/* -------------------------
-  Generate outputs
-------------------------- */
-$("genBtn").addEventListener("click", ()=>{
-  const ok = validateAll();
-  if(!ok){
-    $("linOut").value = "";
-    $("pbnOut").value = "";
+async function ocrROI(dataURL){
+  const { data } = await Tesseract.recognize(dataURL, "eng", {
+    tessedit_char_whitelist: "AKQJT9876543210",
+    preserve_interword_spaces: "0",
+  });
+  let txt = (data.text || "").toUpperCase();
+  txt = txt.replace(/10/g,"T");
+  txt = txt.replace(/[^AKQJT98765432]/g,"");
+  return txt;
+}
+
+let figbAnchor = null; // {x,y,suit,bbox, iconW, iconH}
+
+imgPreview.addEventListener("click", async (ev)=>{
+  if(!currentImage){ return; }
+  drawToCanvas();
+
+  const {x,y,nx,ny} = imgToCanvasXY(ev.clientX, ev.clientY);
+  const c = rgbAt(x,y);
+  const suit = classifySuitColor(c);
+
+  clickMsg.textContent = `Clicked at x=${x}, y=${y} | normalized (${nx.toFixed(3)}, ${ny.toFixed(3)})`;
+
+  if(sourceSel.value !== "C"){
+    flowMsg.textContent = "Click-detection is currently optimized for FIGB (Source C).";
     return;
   }
-  const lin = buildLIN();
-  const pbn = buildPBN();
-  $("linOut").value = lin;
-  $("pbnOut").value = pbn;
+  if(!suit){
+    flowMsg.textContent = "Please click directly on a suit icon (♠/♥/♦/♣).";
+    return;
+  }
+
+  const bbox = floodBlobBBox(x,y,suit);
+  if(!bbox){
+    flowMsg.textContent = "Could not lock on the suit icon blob. Try clicking closer to the colored icon.";
+    return;
+  }
+
+  const iconW = bbox.maxX - bbox.minX + 1;
+  const iconH = bbox.maxY - bbox.minY + 1;
+
+  figbAnchor = { x, y, suit, bbox, iconW, iconH };
+
+  flowMsg.textContent = `Anchor set: clicked ${suit}. Now press “Generate” to OCR this player's 4 suit lines.`;
 });
 
-/* Copy / Download */
-$("copyLin").addEventListener("click", async ()=>{
-  const t = $("linOut").value;
-  if(!t) return;
-  await navigator.clipboard.writeText(t);
-  $("valMsg").textContent = "LIN copied ✅";
+/* ===========================
+   Generate (manual or FIGB OCR)
+=========================== */
+function readManualHands(){
+  const h = {
+    N:{S:normalizeRanks(inputs.nS.value),H:normalizeRanks(inputs.nH.value),D:normalizeRanks(inputs.nD.value),C:normalizeRanks(inputs.nC.value)},
+    E:{S:normalizeRanks(inputs.eS.value),H:normalizeRanks(inputs.eH.value),D:normalizeRanks(inputs.eD.value),C:normalizeRanks(inputs.eC.value)},
+    S:{S:normalizeRanks(inputs.sS.value),H:normalizeRanks(inputs.sH.value),D:normalizeRanks(inputs.sD.value),C:normalizeRanks(inputs.sC.value)},
+    W:{S:normalizeRanks(inputs.wS.value),H:normalizeRanks(inputs.wH.value),D:normalizeRanks(inputs.wD.value),C:normalizeRanks(inputs.wC.value)},
+  };
+  return h;
+}
+
+async function genFromFIGBAnchor(){
+  if(!currentImage || !figbAnchor){
+    throw new Error("FIGB mode: paste/upload an image and click a suit icon first.");
+  }
+  drawToCanvas();
+
+  const b = figbAnchor.bbox;
+  const iconW = Math.max(12, figbAnchor.iconW);
+  const iconH = Math.max(12, figbAnchor.iconH);
+
+  // Estimate suit-row vertical step: roughly 1.25 * iconH (safe)
+  const stepY = Math.round(iconH * 1.35);
+
+  // Use the blob center as row0 reference
+  const row0Y = Math.round((b.minY + b.maxY) / 2);
+
+  // Find the four suit rows by scanning around expected y offsets
+  // We assume clicked icon belongs to one of the 4 rows; we will search near it for the nearest 4-row stack.
+  // Strategy: define a column x around icon center, then sample upward/downward to locate 4 colored icons in a stack.
+  const colX = Math.round((b.minX + b.maxX) / 2);
+
+  // We build candidate row centers: y-1*step, y, y+1*step, y+2*step and later sort.
+  const candidates = [row0Y - stepY, row0Y, row0Y + stepY, row0Y + 2*stepY];
+
+  // For each candidate, find actual blob by searching in a small window around (colX, yCand)
+  function findNearbySuitAt(yCand){
+    const r = 14; // search radius
+    for(let dy=-r; dy<=r; dy++){
+      for(let dx=-r; dx<=r; dx++){
+        const xx = colX + dx, yy = yCand + dy;
+        if(xx<0||yy<0||xx>=canvas.width||yy>=canvas.height) continue;
+        const s = classifySuitColor(rgbAt(xx,yy));
+        if(s){
+          const bb = floodBlobBBox(xx,yy,s,5000);
+          if(bb){
+            const cy = Math.round((bb.minY+bb.maxY)/2);
+            const cx = Math.round((bb.minX+bb.maxX)/2);
+            return {suit:s, bb, cx, cy};
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  const found = [];
+  for(const yCand of candidates){
+    const f = findNearbySuitAt(yCand);
+    if(f) found.push(f);
+  }
+
+  // Deduplicate by suit (we want S/H/D/C once each)
+  const bySuit = {};
+  for(const f of found){
+    if(!bySuit[f.suit]) bySuit[f.suit] = f;
+  }
+
+  // If not all 4 suits found, try expanding search (more candidates)
+  if(Object.keys(bySuit).length < 4){
+    const more = [row0Y - 2*stepY, row0Y + 3*stepY, row0Y - 3*stepY, row0Y + 4*stepY];
+    for(const yCand of more){
+      const f = findNearbySuitAt(yCand);
+      if(f && !bySuit[f.suit]) bySuit[f.suit] = f;
+      if(Object.keys(bySuit).length === 4) break;
+    }
+  }
+
+  const suits = ["S","H","D","C"];
+  const missing = suits.filter(s => !bySuit[s]);
+  if(missing.length){
+    throw new Error("Could not locate all 4 suit icons for this player. Missing: " + missing.join(", ") + ". Try clicking a different suit icon (preferably ♠ of that player).");
+  }
+
+  // Now crop text ROIs to the right of each suit icon
+  // ROI box:
+  //   x starts a little right of icon bbox
+  //   y spans icon bbox with some padding
+  //   width: large enough to capture ranks
+  const results = {S:"",H:"",D:"",C:""};
+  for(const s of suits){
+    const bb = bySuit[s].bb;
+
+    const padY = Math.round(iconH * 0.45);
+    const roiX = Math.min(canvas.width-1, bb.maxX + Math.round(iconW * 0.55));
+    const roiY = Math.max(0, bb.minY - padY);
+    const roiW = Math.max(40, Math.round(iconW * 8.0)); // long enough for "AKQJT987..."
+    const roiH = Math.min(canvas.height - roiY, (bb.maxY - bb.minY + 1) + 2*padY);
+
+    const safeW = Math.min(canvas.width - roiX, roiW);
+    const safeH = Math.min(canvas.height - roiY, roiH);
+
+    const dataURL = cropToDataURL(roiX, roiY, safeW, safeH);
+    const txt = await ocrROI(dataURL);
+    results[s] = txt;
+  }
+
+  // Place these 13 cards into NORTH by default (single-player OCR test)
+  // User can later move to correct seat, or we extend to 4 seats next.
+  const h = {
+    N:{S:results.S,H:results.H,D:results.D,C:results.C},
+    E:{S:"",H:"",D:"",C:""},
+    S:{S:"",H:"",D:"",C:""},
+    W:{S:"",H:"",D:"",C:""},
+  };
+
+  // Mirror into manual UI so user sees it
+  inputs.nS.value = h.N.S; inputs.nH.value = h.N.H; inputs.nD.value = h.N.D; inputs.nC.value = h.N.C;
+
+  return h;
+}
+
+genBtn.addEventListener("click", async ()=>{
+  clearOutputs();
+
+  const source = sourceSel.value;
+
+  try{
+    let hands = null;
+
+    if(source === "C" && currentImage && figbAnchor){
+      flowMsg.textContent = "Running FIGB OCR (symbol-anchored) …";
+      debugOut.value = "FIGB OCR: starting…\n";
+      hands = await genFromFIGBAnchor();
+      debugOut.value += "FIGB OCR: done.\n\n";
+    }else{
+      hands = readManualHands();
+      debugOut.value = "Manual input used.\n\n";
+    }
+
+    // Validate
+    const v = validateAll(hands);
+    debugOut.value += "Hands:\n";
+    debugOut.value += `N S=${hands.N.S} H=${hands.N.H} D=${hands.N.D} C=${hands.N.C}\n`;
+    debugOut.value += `E S=${hands.E.S} H=${hands.E.H} D=${hands.E.D} C=${hands.E.C}\n`;
+    debugOut.value += `S S=${hands.S.S} H=${hands.S.H} D=${hands.S.D} C=${hands.S.C}\n`;
+    debugOut.value += `W S=${hands.W.S} H=${hands.W.H} D=${hands.W.D} C=${hands.W.C}\n\n`;
+
+    debugOut.value += `Validation: OK=${v.ok} total=${v.total}\n`;
+    if(v.errs.length){
+      debugOut.value += "Errors:\n - " + v.errs.join("\n - ") + "\n";
+      setStatus(false, "Validation KO. Fix duplicates/missing cards or click a cleaner suit icon.");
+    }else{
+      debugOut.value += "No errors.\n";
+      setStatus(true, "Validation OK. You can copy/download LIN or open Solver/BBO.");
+    }
+
+    // Build outputs anyway (even if KO, user might want to inspect)
+    const lin = buildLIN(1, "N", "o", hands);
+    const pbn = buildPBN("N", "None", hands);
+    linOut.value = lin;
+    pbnOut.value = pbn;
+
+  }catch(e){
+    setStatus(false, "Cannot generate. " + (e?.message || e));
+    debugOut.value = "ERROR:\n" + (e?.stack || e?.message || e);
+  }
 });
 
-$("dlLin").addEventListener("click", ()=>{
-  const t = $("linOut").value;
-  if(!t) return;
-  const blob = new Blob([t], {type:"text/plain"});
+/* ===========================
+   Buttons: copy/download/open
+=========================== */
+copyLinBtn.addEventListener("click", async ()=>{
+  if(!linOut.value) return;
+  await navigator.clipboard.writeText(linOut.value);
+  flowMsg.textContent = "LIN copied ✅";
+});
+
+dlLinBtn.addEventListener("click", ()=>{
+  const txt = linOut.value || "";
+  const blob = new Blob([txt], {type:"text/plain"});
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = "hand.lin";
   a.click();
+  URL.revokeObjectURL(url);
 });
 
-/* Open external tools (simple URLs) */
-$("openSolver").addEventListener("click", ()=>{
-  // Bridge Solver Online: easiest is to open homepage; users can paste LIN or use their workflow
+function openBSOL(){
+  // Bridge Solver Online supports URL params (varies by deployment).
+  // We provide a simple query with PBN deal if possible; otherwise user can paste LIN.
+  // We'll open their site and user can paste the LIN/PBN.
   window.open("https://www.bridgebase.com/tools/handviewer.html", "_blank");
-});
-$("openBBO").addEventListener("click", ()=>{
-  // BBO Handviewer accepts LIN; simplest: open handviewer and paste LIN
+}
+
+function openBBOHandviewer(){
+  // BBO Handviewer accepts parameters; simplest is open the handviewer page.
   window.open("https://www.bridgebase.com/tools/handviewer.html", "_blank");
+}
+
+openBsolBtn.addEventListener("click", openBSOL);
+openBboBtn.addEventListener("click", openBBOHandviewer);
+
+/* ===========================
+   Sample + Clear
+=========================== */
+loadSampleBtn.addEventListener("click", ()=>{
+  // sample from your earlier board 1
+  inputs.nS.value="AJ542"; inputs.nH.value="K6543"; inputs.nD.value="64"; inputs.nC.value="9";
+  inputs.eS.value="973";   inputs.eH.value="T987";  inputs.eD.value="8";  inputs.eC.value="AJT53";
+  inputs.sS.value="KT6";   inputs.sH.value="AQ";    inputs.sD.value="T2"; inputs.sC.value="KQ7642";
+  inputs.wS.value="Q8";    inputs.wH.value="J2";    inputs.wD.value="AKQJ9753"; inputs.wC.value="8";
+  flowMsg.textContent="Sample loaded. Click Generate.";
 });
 
-/* Clear */
-$("clearBtn").addEventListener("click", ()=>{
-  ["n","e","s","w"].forEach(seat=>{
-    ["S","H","D","C"].forEach(su=>$(seat+su).value="");
-  });
-  $("linOut").value="";
-  $("pbnOut").value="";
-  $("valPill").className="pill ko";
-  $("valPill").textContent="Validation: KO";
-  $("valMsg").textContent="";
-  dbg.textContent="";
-  ocrText.textContent="";
-  cropPreview.style.display="none";
-});
-
-/* validate as user types */
-["n","e","s","w"].forEach(seat=>{
-  ["S","H","D","C"].forEach(su=>{
-    $(seat+su).addEventListener("input", ()=>validateAll());
-  });
+clearBtn.addEventListener("click", ()=>{
+  for(const k in inputs) inputs[k].value="";
+  figbAnchor = null;
+  setStatus(false, "Cleared. Paste image and click a suit icon (FIGB), or use manual input.");
+  clearOutputs();
 });
 </script>
 </body>
