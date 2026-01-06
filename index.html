@@ -2,47 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MK EasyHand App – Paste & Click</title>
+<title>MK EasyHand App – Paste & Seat (v1B)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body{
-  font-family: Arial, Helvetica, sans-serif;
-  background:#f4f4f4;
-  margin:0;
-  padding:14px;
-}
-h1{margin:0 0 6px;font-size:22px}
-.small{font-size:13px;color:#666}
-.panel{
-  background:#fff;
-  border-radius:10px;
-  padding:12px;
-  margin-bottom:12px;
-}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-button{
-  padding:8px 12px;
-  font-size:14px;
-  border-radius:8px;
-  border:0;
-  cursor:pointer;
-  background:#1976d2;
-  color:white;
-}
-button.gray{background:#666}
-input,select{
-  padding:6px;
-  font-size:14px;
-}
-#imgPreview{
-  max-width:100%;
-  border:1px solid #ccc;
-  margin-top:8px;
-  display:none;
-}
-.ok{color:green;font-weight:bold}
-.err{color:#b00020;font-weight:bold}
+  body{
+    font-family: Arial, Helvetica, sans-serif;
+    background:#f4f4f4;
+    margin:0;
+    padding:14px;
+  }
+  h1{margin:0 0 6px;font-size:22px}
+  .small{font-size:13px;color:#666}
+  .panel{
+    background:#fff;
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:12px;
+  }
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  button{
+    padding:8px 12px;
+    font-size:14px;
+    border-radius:8px;
+    border:0;
+    cursor:pointer;
+    background:#1976d2;
+    color:white;
+  }
+  button.gray{background:#666}
+  input,select{
+    padding:6px;
+    font-size:14px;
+  }
+  #imgPreview{
+    max-width:100%;
+    border:1px solid #ccc;
+    margin-top:8px;
+    display:none;
+    touch-action: manipulation;
+  }
+  .ok{color:green;font-weight:bold}
+  .err{color:#b00020;font-weight:bold}
+
+  /* manual inputs */
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+  }
+  @media(max-width:700px){
+    .grid{grid-template-columns:1fr}
+  }
+  .seatBox{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:10px;
+    background:#fafafa;
+  }
+  .seatBox h3{
+    margin:0 0 8px;
+    font-size:16px;
+  }
+  .seatBox.active{
+    border:2px solid #1976d2;
+    background:#eef5ff;
+  }
+  .suitRow{
+    display:grid;
+    grid-template-columns: 22px 1fr;
+    gap:8px;
+    align-items:center;
+    margin:6px 0;
+  }
+  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;}
 </style>
 </head>
 
@@ -50,7 +83,9 @@ input,select{
 
 <h1>MK EasyHand App</h1>
 <div class="small">
-Screenshot → Paste → Click image → Next steps (Solver / BBO)
+  Screenshot → <b>Paste</b> → <b>Click the image</b> → Seat detected (N/E/S/W) → manual fill → later LIN/Solver/BBO.
+  <br>
+  <b>Tip:</b> Click near the hand you want (top=North, bottom=South, left=West, right=East). Center area is ignored.
 </div>
 
 <!-- SOURCE + IMAGE -->
@@ -58,11 +93,11 @@ Screenshot → Paste → Click image → Next steps (Solver / BBO)
   <div class="row">
     <label><b>Source:</b></label>
     <select id="source">
-      <option>A – RealBridge</option>
-      <option>B – BBO</option>
-      <option>C – Federation / Local</option>
-      <option>D – LoveBridge (WBF)</option>
-      <option>E – Bulletin (ACBL / EBL / WBF)</option>
+      <option value="A">A – RealBridge</option>
+      <option value="B">B – BBO</option>
+      <option value="C">C – Federation / Local</option>
+      <option value="D">D – LoveBridge (WBF)</option>
+      <option value="E">E – Bulletin (ACBL / EBL / WBF)</option>
     </select>
 
     <button id="pasteBtn">📋 Paste</button>
@@ -71,83 +106,182 @@ Screenshot → Paste → Click image → Next steps (Solver / BBO)
 
   <div id="pasteMsg" class="small"></div>
 
-  <img id="imgPreview">
+  <img id="imgPreview" alt="Screenshot preview">
   <div id="clickMsg" class="small"></div>
+  <div id="seatMsg" class="small"></div>
 </div>
 
-<!-- STATUS -->
-<div class="panel">
-  <b>Status</b>
-  <div id="status" class="small">Waiting for image…</div>
+<!-- MANUAL INPUTS -->
+<div class="panel" id="manualPanel">
+  <b>Manual hand input (optional)</b>
+  <div class="small">Use 10 or T. Letters: AKQJT98765432</div>
+
+  <div class="grid" style="margin-top:10px">
+    <div class="seatBox" id="boxN">
+      <h3>North</h3>
+      <div class="suitRow"><div>♠</div><input class="mono" id="nS" placeholder="e.g. AKQJ"></div>
+      <div class="suitRow"><div>♥</div><input class="mono" id="nH" placeholder="e.g. T987"></div>
+      <div class="suitRow"><div>♦</div><input class="mono" id="nD" placeholder="e.g. 642"></div>
+      <div class="suitRow"><div>♣</div><input class="mono" id="nC" placeholder="e.g. A73"></div>
+    </div>
+
+    <div class="seatBox" id="boxE">
+      <h3>East</h3>
+      <div class="suitRow"><div>♠</div><input class="mono" id="eS"></div>
+      <div class="suitRow"><div>♥</div><input class="mono" id="eH"></div>
+      <div class="suitRow"><div>♦</div><input class="mono" id="eD"></div>
+      <div class="suitRow"><div>♣</div><input class="mono" id="eC"></div>
+    </div>
+
+    <div class="seatBox" id="boxS">
+      <h3>South</h3>
+      <div class="suitRow"><div>♠</div><input class="mono" id="sS"></div>
+      <div class="suitRow"><div>♥</div><input class="mono" id="sH"></div>
+      <div class="suitRow"><div>♦</div><input class="mono" id="sD"></div>
+      <div class="suitRow"><div>♣</div><input class="mono" id="sC"></div>
+    </div>
+
+    <div class="seatBox" id="boxW">
+      <h3>West</h3>
+      <div class="suitRow"><div>♠</div><input class="mono" id="wS"></div>
+      <div class="suitRow"><div>♥</div><input class="mono" id="wH"></div>
+      <div class="suitRow"><div>♦</div><input class="mono" id="wD"></div>
+      <div class="suitRow"><div>♣</div><input class="mono" id="wC"></div>
+    </div>
+  </div>
+
+  <div class="small" style="margin-top:10px">
+    (Next step will generate LIN/PBN and open Bridge Solver / BBO automatically.)
+  </div>
 </div>
 
 <script>
-const imgPreview = document.getElementById("imgPreview");
-const pasteBtn = document.getElementById("pasteBtn");
-const fileInput = document.getElementById("fileInput");
-const pasteMsg = document.getElementById("pasteMsg");
-const clickMsg = document.getElementById("clickMsg");
-const statusBox = document.getElementById("status");
+  const imgPreview = document.getElementById("imgPreview");
+  const pasteBtn   = document.getElementById("pasteBtn");
+  const fileInput  = document.getElementById("fileInput");
+  const pasteMsg   = document.getElementById("pasteMsg");
+  const clickMsg   = document.getElementById("clickMsg");
+  const seatMsg    = document.getElementById("seatMsg");
+  const sourceSel  = document.getElementById("source");
+  const manualPanel= document.getElementById("manualPanel");
 
-// ---------- IMAGE HANDLING ----------
-function showImage(blob, origin){
-  const url = URL.createObjectURL(blob);
-  imgPreview.src = url;
-  imgPreview.style.display = "block";
-  pasteMsg.textContent = origin;
-  statusBox.textContent = "Image ready. Click on it.";
-}
+  const seatBoxes = {
+    N: document.getElementById("boxN"),
+    E: document.getElementById("boxE"),
+    S: document.getElementById("boxS"),
+    W: document.getElementById("boxW"),
+  };
 
-// ---------- PASTE FROM CLIPBOARD ----------
-pasteBtn.onclick = async () => {
-  pasteMsg.textContent = "";
-  if(!navigator.clipboard || !navigator.clipboard.read){
-    pasteMsg.textContent = "Clipboard paste not supported here.";
-    return;
+  const seatFirstInputs = {
+    N: document.getElementById("nS"),
+    E: document.getElementById("eS"),
+    S: document.getElementById("sS"),
+    W: document.getElementById("wS"),
+  };
+
+  function showImage(blob, origin){
+    const url = URL.createObjectURL(blob);
+    imgPreview.src = url;
+    imgPreview.style.display = "block";
+    pasteMsg.textContent = origin;
+    clickMsg.textContent = "";
+    seatMsg.textContent = "Click the screenshot near a hand to select the seat (N/E/S/W).";
+    clearSeatHighlight();
   }
-  try{
-    const items = await navigator.clipboard.read();
-    for(const it of items){
-      const t = it.types.find(x => x.startsWith("image/"));
-      if(t){
-        const blob = await it.getType(t);
-        showImage(blob, "Image pasted from clipboard.");
-        return;
-      }
+
+  // --- Paste from clipboard ---
+  pasteBtn.onclick = async () => {
+    pasteMsg.textContent = "";
+    if(!navigator.clipboard || !navigator.clipboard.read){
+      pasteMsg.textContent = "Clipboard paste not supported here.";
+      return;
     }
-    pasteMsg.textContent = "No image in clipboard.";
-  }catch(err){
-    pasteMsg.textContent = "Clipboard access denied (HTTPS required).";
+    try{
+      const items = await navigator.clipboard.read();
+      for(const it of items){
+        const t = it.types.find(x => x.startsWith("image/"));
+        if(t){
+          const blob = await it.getType(t);
+          showImage(blob, "Image pasted from clipboard.");
+          return;
+        }
+      }
+      pasteMsg.textContent = "No image found in clipboard.";
+    }catch(err){
+      pasteMsg.textContent = "Clipboard access denied (HTTPS required).";
+    }
+  };
+
+  // --- File upload ---
+  fileInput.onchange = () => {
+    const f = fileInput.files[0];
+    if(!f) return;
+    showImage(f, "Image loaded from file.");
+  };
+
+  // --- STEP 1B: seat detection from normalized click ---
+  function detectSeat(nx, ny){
+    // Basic universal rules (good starting point)
+    // Priority: top/bottom first, then left/right
+    const TOP = 0.28;
+    const BOT = 0.72;
+    const LEFT = 0.28;
+    const RIGHT = 0.72;
+
+    if(ny < TOP) return "N";
+    if(ny > BOT) return "S";
+    if(nx < LEFT) return "W";
+    if(nx > RIGHT) return "E";
+    return null; // center area
   }
-};
 
-// ---------- FILE UPLOAD ----------
-fileInput.onchange = () => {
-  const f = fileInput.files[0];
-  if(!f) return;
-  showImage(f, "Image loaded from file.");
-};
+  function clearSeatHighlight(){
+    Object.values(seatBoxes).forEach(b => b.classList.remove("active"));
+  }
 
-// ---------- CLICK DETECTION ----------
-function handleClick(e){
-  if(imgPreview.style.display === "none") return;
+  function setActiveSeat(seat){
+    clearSeatHighlight();
+    if(!seat) return;
 
-  const rect = imgPreview.getBoundingClientRect();
-  const cx = e.touches ? e.touches[0].clientX : e.clientX;
-  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+    seatBoxes[seat].classList.add("active");
 
-  const x = Math.round(cx - rect.left);
-  const y = Math.round(cy - rect.top);
+    // scroll and focus (nice on mobile)
+    manualPanel.scrollIntoView({behavior:"smooth", block:"start"});
+    setTimeout(() => {
+      seatFirstInputs[seat].focus();
+    }, 250);
+  }
 
-  const nx = (x / rect.width).toFixed(3);
-  const ny = (y / rect.height).toFixed(3);
+  function handleClick(e){
+    if(imgPreview.style.display === "none") return;
 
-  clickMsg.innerHTML =
-    `Clicked at x=${x}, y=${y} &nbsp; | &nbsp; normalized (${nx}, ${ny})`;
-}
+    const rect = imgPreview.getBoundingClientRect();
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const cy = e.touches ? e.touches[0].clientY : e.clientY;
 
-imgPreview.addEventListener("click", handleClick);
-imgPreview.addEventListener("touchstart", handleClick, {passive:true});
+    const x = Math.round(cx - rect.left);
+    const y = Math.round(cy - rect.top);
+
+    const nx = x / rect.width;
+    const ny = y / rect.height;
+
+    clickMsg.innerHTML =
+      `Clicked at x=${x}, y=${y} &nbsp; | &nbsp; normalized (${nx.toFixed(3)}, ${ny.toFixed(3)})`;
+
+    const seat = detectSeat(nx, ny);
+    if(!seat){
+      seatMsg.innerHTML = `<span class="err">Center area detected (board/auction zone). Click closer to a hand.</span>`;
+      clearSeatHighlight();
+      return;
+    }
+
+    const src = sourceSel.value;
+    seatMsg.innerHTML = `<span class="ok">Seat detected: ${seat}</span> <span class="small">(Source ${src})</span>`;
+    setActiveSeat(seat);
+  }
+
+  imgPreview.addEventListener("click", handleClick);
+  imgPreview.addEventListener("touchstart", handleClick, {passive:true});
 </script>
 
 </body>
