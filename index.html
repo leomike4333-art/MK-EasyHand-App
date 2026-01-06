@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MK EasyHand App</title>
+<title>MK EasyHand App – Paste & Click</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -13,6 +13,7 @@ body{
   padding:14px;
 }
 h1{margin:0 0 6px;font-size:22px}
+.small{font-size:13px;color:#666}
 .panel{
   background:#fff;
   border-radius:10px;
@@ -30,39 +31,18 @@ button{
   color:white;
 }
 button.gray{background:#666}
-button:disabled{opacity:.5}
 input,select{
   padding:6px;
   font-size:14px;
 }
-.small{font-size:13px;color:#666}
-.ok{color:green;font-weight:bold}
-.err{color:#b00020;font-weight:bold}
 #imgPreview{
   max-width:100%;
   border:1px solid #ccc;
   margin-top:8px;
   display:none;
 }
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-@media(max-width:700px){
-  .grid{grid-template-columns:1fr}
-}
-.seat{
-  border:1px solid #ddd;
-  border-radius:8px;
-  padding:8px;
-}
-.seat h3{margin:0 0 6px;font-size:16px}
-textarea{
-  width:100%;
-  height:90px;
-  font-family:monospace;
-}
+.ok{color:green;font-weight:bold}
+.err{color:#b00020;font-weight:bold}
 </style>
 </head>
 
@@ -70,20 +50,19 @@ textarea{
 
 <h1>MK EasyHand App</h1>
 <div class="small">
-Screenshot → Hand → Bridge Solver / BBO  
-<br><b>Tip:</b> take a screenshot and use <b>Paste</b>.
+Screenshot → Paste → Click image → Next steps (Solver / BBO)
 </div>
 
-<!-- SOURCE & IMAGE -->
+<!-- SOURCE + IMAGE -->
 <div class="panel">
   <div class="row">
     <label><b>Source:</b></label>
     <select id="source">
-      <option value="A">A – RealBridge</option>
-      <option value="B">B – BBO</option>
-      <option value="C">C – Federation / Local</option>
-      <option value="D">D – LoveBridge (WBF)</option>
-      <option value="E">E – Bulletin (ACBL / EBL / WBF)</option>
+      <option>A – RealBridge</option>
+      <option>B – BBO</option>
+      <option>C – Federation / Local</option>
+      <option>D – LoveBridge (WBF)</option>
+      <option>E – Bulletin (ACBL / EBL / WBF)</option>
     </select>
 
     <button id="pasteBtn">📋 Paste</button>
@@ -91,134 +70,85 @@ Screenshot → Hand → Bridge Solver / BBO
   </div>
 
   <div id="pasteMsg" class="small"></div>
+
   <img id="imgPreview">
+  <div id="clickMsg" class="small"></div>
 </div>
 
-<!-- HAND INPUT -->
+<!-- STATUS -->
 <div class="panel">
-  <b>Manual hand input (optional)</b>
-  <div class="grid">
-    <div class="seat">
-      <h3>North</h3>
-      ♠ <input id="nS"> ♥ <input id="nH"> ♦ <input id="nD"> ♣ <input id="nC">
-    </div>
-    <div class="seat">
-      <h3>East</h3>
-      ♠ <input id="eS"> ♥ <input id="eH"> ♦ <input id="eD"> ♣ <input id="eC">
-    </div>
-    <div class="seat">
-      <h3>South</h3>
-      ♠ <input id="sS"> ♥ <input id="sH"> ♦ <input id="sD"> ♣ <input id="sC">
-    </div>
-    <div class="seat">
-      <h3>West</h3>
-      ♠ <input id="wS"> ♥ <input id="wH"> ♦ <input id="wD"> ♣ <input id="wC">
-    </div>
-  </div>
-
-  <div class="row" style="margin-top:10px">
-    <button id="genBtn">Generate LIN</button>
-    <span id="status" class="small"></span>
-  </div>
-</div>
-
-<!-- OUTPUT -->
-<div class="panel">
-  <b>LIN output</b>
-  <textarea id="linOut" readonly></textarea>
-  <div class="row">
-    <button id="openBSOL" disabled>Open Bridge Solver</button>
-    <button id="openBBO" disabled>Open BBO</button>
-  </div>
+  <b>Status</b>
+  <div id="status" class="small">Waiting for image…</div>
 </div>
 
 <script>
-const $=id=>document.getElementById(id);
-const fields=["nS","nH","nD","nC","eS","eH","eD","eC","sS","sH","sD","sC","wS","wH","wD","wC"];
+const imgPreview = document.getElementById("imgPreview");
+const pasteBtn = document.getElementById("pasteBtn");
+const fileInput = document.getElementById("fileInput");
+const pasteMsg = document.getElementById("pasteMsg");
+const clickMsg = document.getElementById("clickMsg");
+const statusBox = document.getElementById("status");
 
-function norm(t){
-  return (t||"").toUpperCase().replace(/10/g,"T").replace(/[^AKQJT98765432]/g,"");
+// ---------- IMAGE HANDLING ----------
+function showImage(blob, origin){
+  const url = URL.createObjectURL(blob);
+  imgPreview.src = url;
+  imgPreview.style.display = "block";
+  pasteMsg.textContent = origin;
+  statusBox.textContent = "Image ready. Click on it.";
 }
 
-function readHands(){
-  return {
-    N:{S:norm(nS.value),H:norm(nH.value),D:norm(nD.value),C:norm(nC.value)},
-    E:{S:norm(eS.value),H:norm(eH.value),D:norm(eD.value),C:norm(eC.value)},
-    S:{S:norm(sS.value),H:norm(sH.value),D:norm(sD.value),C:norm(sC.value)},
-    W:{S:norm(wS.value),H:norm(wH.value),D:norm(wD.value),C:norm(wC.value)}
-  };
-}
-
-function validate(h){
-  let set=new Set(),tot=0,err=[];
-  for(const p of ["N","E","S","W"]){
-    let c=0;
-    for(const s of ["S","H","D","C"]){
-      for(const r of h[p][s]){
-        tot++;c++;
-        const k=s+r;
-        if(set.has(k)) err.push("Duplicate "+k);
-        set.add(k);
+// ---------- PASTE FROM CLIPBOARD ----------
+pasteBtn.onclick = async () => {
+  pasteMsg.textContent = "";
+  if(!navigator.clipboard || !navigator.clipboard.read){
+    pasteMsg.textContent = "Clipboard paste not supported here.";
+    return;
+  }
+  try{
+    const items = await navigator.clipboard.read();
+    for(const it of items){
+      const t = it.types.find(x => x.startsWith("image/"));
+      if(t){
+        const blob = await it.getType(t);
+        showImage(blob, "Image pasted from clipboard.");
+        return;
       }
     }
-    if(c!==13) err.push(p+" has "+c+" cards");
+    pasteMsg.textContent = "No image in clipboard.";
+  }catch(err){
+    pasteMsg.textContent = "Clipboard access denied (HTTPS required).";
   }
-  if(tot!==52) err.push("Total cards "+tot);
-  return err;
+};
+
+// ---------- FILE UPLOAD ----------
+fileInput.onchange = () => {
+  const f = fileInput.files[0];
+  if(!f) return;
+  showImage(f, "Image loaded from file.");
+};
+
+// ---------- CLICK DETECTION ----------
+function handleClick(e){
+  if(imgPreview.style.display === "none") return;
+
+  const rect = imgPreview.getBoundingClientRect();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+
+  const x = Math.round(cx - rect.left);
+  const y = Math.round(cy - rect.top);
+
+  const nx = (x / rect.width).toFixed(3);
+  const ny = (y / rect.height).toFixed(3);
+
+  clickMsg.innerHTML =
+    `Clicked at x=${x}, y=${y} &nbsp; | &nbsp; normalized (${nx}, ${ny})`;
 }
 
-function seatStr(x){return x.S+x.H+x.D+x.C}
-
-genBtn.onclick=()=>{
-  const h=readHands();
-  const err=validate(h);
-  if(err.length){
-    status.innerHTML='<span class="err">'+err.join("; ")+'</span>';
-    linOut.value="";
-    openBSOL.disabled=openBBO.disabled=true;
-    return;
-  }
-  status.innerHTML='<span class="ok">Validation OK (52 cards)</span>';
-  linOut.value=`pn|N,E,S,W|sv|o|bd|1|md|3${seatStr(h.N)},${seatStr(h.W)},${seatStr(h.E)},${seatStr(h.S)}|`;
-  openBSOL.disabled=openBBO.disabled=false;
-};
-
-openBSOL.onclick=()=>{
-  window.open("https://dds.bridgewebs.com/bsol2/ddummy.htm","_blank");
-};
-openBBO.onclick=()=>{
-  window.open("https://www.bridgebase.com/tools/handviewer.html","_blank");
-};
-
-// IMAGE PASTE / UPLOAD
-pasteBtn.onclick=async()=>{
-  if(!navigator.clipboard||!navigator.clipboard.read){
-    pasteMsg.textContent="Clipboard paste not supported here.";
-    return;
-  }
-  const items=await navigator.clipboard.read();
-  for(const it of items){
-    const t=it.types.find(x=>x.startsWith("image/"));
-    if(t){
-      const blob=await it.getType(t);
-      imgPreview.src=URL.createObjectURL(blob);
-      imgPreview.style.display="block";
-      pasteMsg.textContent="Image pasted from clipboard.";
-      return;
-    }
-  }
-  pasteMsg.textContent="No image in clipboard.";
-};
-
-fileInput.onchange=()=>{
-  const f=fileInput.files[0];
-  if(!f)return;
-  imgPreview.src=URL.createObjectURL(f);
-  imgPreview.style.display="block";
-  pasteMsg.textContent="Image loaded from file.";
-};
+imgPreview.addEventListener("click", handleClick);
+imgPreview.addEventListener("touchstart", handleClick, {passive:true});
 </script>
 
 </body>
 </html>
-
