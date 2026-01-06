@@ -1,379 +1,222 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MK EasyHand – Bridge → LIN / PBN</title>
+<meta charset="UTF-8">
+<title>MK EasyHand App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-  :root{--bg:#f2f2f2;--card:#fff;--muted:#666;--ok:#0a7a2f;--bad:#b00020;--blue:#1976d2}
-  body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;padding:18px}
-  h1{margin:0 0 12px 0}
-  .box{background:var(--card);border-radius:12px;padding:14px;margin-bottom:14px}
-  .small{color:var(--muted);font-size:13px;line-height:1.35}
-  .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-  .pill{padding:6px 10px;border-radius:999px;background:#eef3ff;color:#234}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
-  .seat{border:1px solid #e6e6e6;border-radius:12px;padding:12px}
-  .seat h3{margin:0 0 10px 0}
-  .row{display:flex;align-items:center;gap:10px;margin:8px 0}
-  .suit{width:22px;font-weight:bold}
-  input{flex:1;padding:10px;border-radius:10px;border:1px solid #ccc;font-size:14px}
-  textarea{width:100%;height:120px;font-family:ui-monospace,Consolas,monospace;font-size:13px;border-radius:10px;border:1px solid #ccc;padding:10px;box-sizing:border-box}
-  .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-  button{padding:10px 14px;border:0;border-radius:10px;color:#fff;background:var(--blue);cursor:pointer;font-size:14px}
-  button.gray{background:#666}
-  button.red{background:var(--bad)}
-  button.green{background:var(--ok)}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  #status{font-weight:bold}
-  .ok{color:var(--ok)}
-  .bad{color:var(--bad)}
-  #debug{white-space:pre-wrap;background:#f7f7f7;border-radius:10px;padding:10px;border:1px solid #eee;font-size:12px;margin-top:10px}
-  select{padding:8px 10px;border-radius:10px;border:1px solid #ccc}
-  .mini{width:90px}
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  background:#f4f4f4;
+  margin:0;
+  padding:14px;
+}
+h1{margin:0 0 6px;font-size:22px}
+.panel{
+  background:#fff;
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{
+  padding:8px 12px;
+  font-size:14px;
+  border-radius:8px;
+  border:0;
+  cursor:pointer;
+  background:#1976d2;
+  color:white;
+}
+button.gray{background:#666}
+button:disabled{opacity:.5}
+input,select{
+  padding:6px;
+  font-size:14px;
+}
+.small{font-size:13px;color:#666}
+.ok{color:green;font-weight:bold}
+.err{color:#b00020;font-weight:bold}
+#imgPreview{
+  max-width:100%;
+  border:1px solid #ccc;
+  margin-top:8px;
+  display:none;
+}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+@media(max-width:700px){
+  .grid{grid-template-columns:1fr}
+}
+.seat{
+  border:1px solid #ddd;
+  border-radius:8px;
+  padding:8px;
+}
+.seat h3{margin:0 0 6px;font-size:16px}
+textarea{
+  width:100%;
+  height:90px;
+  font-family:monospace;
+}
 </style>
 </head>
 
 <body>
 
-<h1>MK EasyHand – Bridge → LIN / PBN</h1>
+<h1>MK EasyHand App</h1>
+<div class="small">
+Screenshot → Hand → Bridge Solver / BBO  
+<br><b>Tip:</b> take a screenshot and use <b>Paste</b>.
+</div>
 
-<div class="box">
-  <div class="topbar">
-    <span class="pill"><b>1 board</b> → Validate → LIN/PBN → Open BSOL/BBO</span>
-
-    <label for="shotType" class="small"><b>Source:</b></label>
-    <select id="shotType" title="Screenshot source">
+<!-- SOURCE & IMAGE -->
+<div class="panel">
+  <div class="row">
+    <label><b>Source:</b></label>
+    <select id="source">
       <option value="A">A – RealBridge</option>
       <option value="B">B – BBO</option>
-      <option value="C">C – Other</option>
+      <option value="C">C – Federation / Local</option>
+      <option value="D">D – LoveBridge (WBF)</option>
+      <option value="E">E – Bulletin (ACBL / EBL / WBF)</option>
     </select>
 
-    <label for="boardNo" class="small"><b>Board:</b></label>
-    <input id="boardNo" class="mini" inputmode="numeric" value="1" />
-
-    <label for="dealer" class="small"><b>Dealer:</b></label>
-    <select id="dealer">
-      <option value="N">N</option>
-      <option value="E">E</option>
-      <option value="S">S</option>
-      <option value="W">W</option>
-    </select>
-
-    <label for="vul" class="small"><b>Vul:</b></label>
-    <select id="vul">
-      <option value="None">None</option>
-      <option value="NS">NS</option>
-      <option value="EW">EW</option>
-      <option value="All">All</option>
-    </select>
-
-    <span class="small">Use <b>10</b> or <b>T</b>. The app normalizes and checks missing/duplicate cards.</span>
+    <button id="pasteBtn">📋 Paste</button>
+    <input type="file" id="fileInput" accept="image/*">
   </div>
 
-  <div class="small" style="margin-top:8px"><b>Hint:</b> <span id="shotHint"></span></div>
-
-  <div class="actions" style="margin-top:12px">
-    <button class="gray" id="btnExample" type="button">Load sample</button>
-    <button class="red" id="btnClear" type="button">Clear</button>
-    <button class="green" id="btnGen" type="button">Generate LIN / PBN (validate)</button>
-    <span id="status" class="bad">Validation: KO</span>
-  </div>
-
-  <div id="debug">DEBUG: ready.</div>
+  <div id="pasteMsg" class="small"></div>
+  <img id="imgPreview">
 </div>
 
-<div class="grid">
-  <div class="seat">
-    <h3>NORTH</h3>
-    <div class="row"><div class="suit">♠</div><input id="nS" placeholder="AJ542"></div>
-    <div class="row"><div class="suit">♥</div><input id="nH" placeholder="K6543"></div>
-    <div class="row"><div class="suit">♦</div><input id="nD" placeholder="64"></div>
-    <div class="row"><div class="suit">♣</div><input id="nC" placeholder="9"></div>
+<!-- HAND INPUT -->
+<div class="panel">
+  <b>Manual hand input (optional)</b>
+  <div class="grid">
+    <div class="seat">
+      <h3>North</h3>
+      ♠ <input id="nS"> ♥ <input id="nH"> ♦ <input id="nD"> ♣ <input id="nC">
+    </div>
+    <div class="seat">
+      <h3>East</h3>
+      ♠ <input id="eS"> ♥ <input id="eH"> ♦ <input id="eD"> ♣ <input id="eC">
+    </div>
+    <div class="seat">
+      <h3>South</h3>
+      ♠ <input id="sS"> ♥ <input id="sH"> ♦ <input id="sD"> ♣ <input id="sC">
+    </div>
+    <div class="seat">
+      <h3>West</h3>
+      ♠ <input id="wS"> ♥ <input id="wH"> ♦ <input id="wD"> ♣ <input id="wC">
+    </div>
   </div>
 
-  <div class="seat">
-    <h3>EAST</h3>
-    <div class="row"><div class="suit">♠</div><input id="eS" placeholder="973"></div>
-    <div class="row"><div class="suit">♥</div><input id="eH" placeholder="10987"></div>
-    <div class="row"><div class="suit">♦</div><input id="eD" placeholder="8"></div>
-    <div class="row"><div class="suit">♣</div><input id="eC" placeholder="AJ1053"></div>
-  </div>
-
-  <div class="seat">
-    <h3>SOUTH</h3>
-    <div class="row"><div class="suit">♠</div><input id="sS" placeholder="K106"></div>
-    <div class="row"><div class="suit">♥</div><input id="sH" placeholder="AQ"></div>
-    <div class="row"><div class="suit">♦</div><input id="sD" placeholder="102"></div>
-    <div class="row"><div class="suit">♣</div><input id="sC" placeholder="KQ7642"></div>
-  </div>
-
-  <div class="seat">
-    <h3>WEST</h3>
-    <div class="row"><div class="suit">♠</div><input id="wS" placeholder="Q8"></div>
-    <div class="row"><div class="suit">♥</div><input id="wH" placeholder="J2"></div>
-    <div class="row"><div class="suit">♦</div><input id="wD" placeholder="AKQJ9753"></div>
-    <div class="row"><div class="suit">♣</div><input id="wC" placeholder="8"></div>
+  <div class="row" style="margin-top:10px">
+    <button id="genBtn">Generate LIN</button>
+    <span id="status" class="small"></span>
   </div>
 </div>
 
-<div class="box">
-  <b>Output LIN</b>
-  <textarea id="outLIN" readonly></textarea>
-  <div class="actions">
-    <button class="gray" id="btnCopyLin" type="button">Copy LIN</button>
-    <button id="btnDlLin" type="button">Download .lin</button>
-    <button id="btnOpenBSOL" type="button" disabled>Open in Bridge Solver Online</button>
-    <button id="btnOpenBBO" type="button" disabled>Open in BBO Handviewer</button>
+<!-- OUTPUT -->
+<div class="panel">
+  <b>LIN output</b>
+  <textarea id="linOut" readonly></textarea>
+  <div class="row">
+    <button id="openBSOL" disabled>Open Bridge Solver</button>
+    <button id="openBBO" disabled>Open BBO</button>
   </div>
-  <div class="small">
-    Note: links open in a new tab. If pop-ups are blocked, allow new tabs for this site.
-  </div>
-</div>
-
-<div class="box">
-  <b>Output PBN</b>
-  <textarea id="outPBN" readonly></textarea>
 </div>
 
 <script>
-  const $ = (id) => document.getElementById(id);
+const $=id=>document.getElementById(id);
+const fields=["nS","nH","nD","nC","eS","eH","eD","eC","sS","sH","sD","sC","wS","wH","wD","wC"];
 
-  // --- Source hints
-  function updateShotHint(){
-    const v = $("shotType").value;
-    const hints = {
-      A: "RealBridge: usually clearer layout; board/dealer/vul are often top-left.",
-      B: "BBO: more compact layout; watch out for 10/T and tiny suit symbols.",
-      C: "Other federation software: manual input now; later we add presets + OCR templates."
-    };
-    $("shotHint").textContent = hints[v] || "";
-  }
+function norm(t){
+  return (t||"").toUpperCase().replace(/10/g,"T").replace(/[^AKQJT98765432]/g,"");
+}
 
-  // 10 -> T, keep only ranks
-  function normRanks(t){
-    return (t||"")
-      .toUpperCase()
-      .replace(/10/g,"T")
-      .replace(/[^AKQJT98765432]/g,"");
-  }
+function readHands(){
+  return {
+    N:{S:norm(nS.value),H:norm(nH.value),D:norm(nD.value),C:norm(nC.value)},
+    E:{S:norm(eS.value),H:norm(eH.value),D:norm(eD.value),C:norm(eC.value)},
+    S:{S:norm(sS.value),H:norm(sH.value),D:norm(sD.value),C:norm(sC.value)},
+    W:{S:norm(wS.value),H:norm(wH.value),D:norm(wD.value),C:norm(wC.value)}
+  };
+}
 
-  function readHands(){
-    return {
-      N:{S:normRanks($("nS").value),H:normRanks($("nH").value),D:normRanks($("nD").value),C:normRanks($("nC").value)},
-      E:{S:normRanks($("eS").value),H:normRanks($("eH").value),D:normRanks($("eD").value),C:normRanks($("eC").value)},
-      S:{S:normRanks($("sS").value),H:normRanks($("sH").value),D:normRanks($("sD").value),C:normRanks($("sC").value)},
-      W:{S:normRanks($("wS").value),H:normRanks($("wH").value),D:normRanks($("wD").value),C:normRanks($("wC").value)}
-    };
-  }
-
-  function validate52(h){
-    const seen = new Set();
-    const errors = [];
-    const seats = ["N","E","S","W"];
-    const suits = ["S","H","D","C"];
-    let tot = 0;
-
-    for (const p of seats){
-      let cnt = 0;
-      for (const s of suits){
-        for (const r of h[p][s]){
-          tot++; cnt++;
-          const k = s + r;
-          if (seen.has(k)) errors.push("Duplicate: " + k);
-          seen.add(k);
-        }
+function validate(h){
+  let set=new Set(),tot=0,err=[];
+  for(const p of ["N","E","S","W"]){
+    let c=0;
+    for(const s of ["S","H","D","C"]){
+      for(const r of h[p][s]){
+        tot++;c++;
+        const k=s+r;
+        if(set.has(k)) err.push("Duplicate "+k);
+        set.add(k);
       }
-      if (cnt !== 13) errors.push(`Seat ${p}: ${cnt} cards (expected 13)`);
     }
-    if (tot !== 52) errors.push(`Total cards: ${tot} (expected 52)`);
-    return { ok: errors.length===0, tot, errors };
+    if(c!==13) err.push(p+" has "+c+" cards");
   }
+  if(tot!==52) err.push("Total cards "+tot);
+  return err;
+}
 
-  function setStatus(ok){
-    $("status").className = ok ? "ok" : "bad";
-    $("status").textContent = ok ? "Validation: OK ✅" : "Validation: KO";
-    $("btnOpenBSOL").disabled = !ok;
-    $("btnOpenBBO").disabled = !ok;
+function seatStr(x){return x.S+x.H+x.D+x.C}
+
+genBtn.onclick=()=>{
+  const h=readHands();
+  const err=validate(h);
+  if(err.length){
+    status.innerHTML='<span class="err">'+err.join("; ")+'</span>';
+    linOut.value="";
+    openBSOL.disabled=openBBO.disabled=true;
+    return;
   }
+  status.innerHTML='<span class="ok">Validation OK (52 cards)</span>';
+  linOut.value=`pn|N,E,S,W|sv|o|bd|1|md|3${seatStr(h.N)},${seatStr(h.W)},${seatStr(h.E)},${seatStr(h.S)}|`;
+  openBSOL.disabled=openBBO.disabled=false;
+};
 
-  function boardNumber(){
-    const raw = ($("boardNo").value || "").trim();
-    const n = parseInt(raw, 10);
-    return (Number.isFinite(n) && n > 0) ? n : 1;
+openBSOL.onclick=()=>{
+  window.open("https://dds.bridgewebs.com/bsol2/ddummy.htm","_blank");
+};
+openBBO.onclick=()=>{
+  window.open("https://www.bridgebase.com/tools/handviewer.html","_blank");
+};
+
+// IMAGE PASTE / UPLOAD
+pasteBtn.onclick=async()=>{
+  if(!navigator.clipboard||!navigator.clipboard.read){
+    pasteMsg.textContent="Clipboard paste not supported here.";
+    return;
   }
-
-  function dealerVal(){ return $("dealer").value || "N"; }
-  function vulVal(){ return $("vul").value || "None"; }
-
-  // Map Vulnerability to LIN 'sv' code: o/ n/ e/ b
-  function vulToLinSv(v){
-    if (v === "NS") return "n";
-    if (v === "EW") return "e";
-    if (v === "All") return "b";
-    return "o"; // None
+  const items=await navigator.clipboard.read();
+  for(const it of items){
+    const t=it.types.find(x=>x.startsWith("image/"));
+    if(t){
+      const blob=await it.getType(t);
+      imgPreview.src=URL.createObjectURL(blob);
+      imgPreview.style.display="block";
+      pasteMsg.textContent="Image pasted from clipboard.";
+      return;
+    }
   }
+  pasteMsg.textContent="No image in clipboard.";
+};
 
-  // BSOL seat string S.H.D.C
-  function seatDots(seat){ return `${seat.S||"-"}.${seat.H||"-"}.${seat.D||"-"}.${seat.C||"-"}`; }
-  // Handviewer seat string s..h..d..c.. (lowercase)
-  function seatHV(seat){ return (`s${seat.S}h${seat.H}d${seat.D}c${seat.C}`).toLowerCase(); }
-
-  function buildOutputs(h){
-    const b = boardNumber();
-    const d = dealerVal();
-    const v = vulVal();
-
-    const n = seatDots(h.N);
-    const e = seatDots(h.E);
-    const s = seatDots(h.S);
-    const w = seatDots(h.W);
-
-    $("outPBN").value =
-`[Board "${b}"]
-[Dealer "${d}"]
-[Vulnerable "${v}"]
-[Deal "N:${n} ${e} ${s} ${w}"]`;
-
-    // LIN minimal deal: order N,W,E,S (works well with your flow)
-    const md = `${h.N.S}${h.N.H}${h.N.D}${h.N.C},${h.W.S}${h.W.H}${h.W.D}${h.W.C},${h.E.S}${h.E.H}${h.E.D}${h.E.C},${h.S.S}${h.S.H}${h.S.D}${h.S.C}`;
-    const sv = vulToLinSv(v);
-    const dealerCode = ({N:3,E:4,S:1,W:2}[d] || 3); // LIN md|<dealerCode>...
-
-    $("outLIN").value = `pn|N,E,S,W|sv|${sv}|bd|${b}|md|${dealerCode}${md}|`;
-  }
-
-  function buildBSOLUrl(h){
-    const base = "https://dds.bridgewebs.com/bsol2/ddummy.htm";
-    const b = boardNumber();
-    const d = dealerVal();
-    const v = vulVal();
-
-    const params = new URLSearchParams({
-      board: String(b),
-      dealer: d,
-      vul: v,
-      north: seatDots(h.N),
-      east:  seatDots(h.E),
-      south: seatDots(h.S),
-      west:  seatDots(h.W),
-      analyse: "true"
-    });
-    return `${base}?${params.toString()}`;
-  }
-
-  // BBO Handviewer 'v' codes: '-' none, 'n' NS, 'e' EW, 'b' all
-  function vulToBboV(v){
-    if (v === "NS") return "n";
-    if (v === "EW") return "e";
-    if (v === "All") return "b";
-    return "-";
-  }
-
-  function buildBBOUrl(h){
-    const base = "https://www.bridgebase.com/tools/handviewer.html";
-    const b = boardNumber();
-    const d = dealerVal();
-    const v = vulToBboV(vulVal());
-
-    const params = new URLSearchParams({
-      b: String(b),
-      d: d.toLowerCase(),
-      v: v,
-      n: seatHV(h.N),
-      e: seatHV(h.E),
-      s: seatHV(h.S),
-      w: seatHV(h.W)
-    });
-    return `${base}?${params.toString()}`;
-  }
-
-  function debugDump(h, vld){
-    $("debug").textContent =
-`DEBUG:
-Source=${$("shotType").value}
-Board=${boardNumber()}  Dealer=${dealerVal()}  Vul=${vulVal()}
-
-N S=${h.N.S} H=${h.N.H} D=${h.N.D} C=${h.N.C}
-E S=${h.E.S} H=${h.E.H} D=${h.E.D} C=${h.E.C}
-S S=${h.S.S} H=${h.S.H} D=${h.S.D} C=${h.S.C}
-W S=${h.W.S} H=${h.W.H} D=${h.W.D} C=${h.W.C}
-
-Validation: OK=${vld.ok}  total=${vld.tot}
-${vld.errors.length ? ("Errors:\n- " + vld.errors.join("\n- ")) : "No errors."}`;
-  }
-
-  // UI actions
-  $("btnExample").onclick = () => {
-    $("boardNo").value = "1";
-    $("dealer").value = "N";
-    $("vul").value = "None";
-
-    $("nS").value="AJ542"; $("nH").value="K6543"; $("nD").value="64"; $("nC").value="9";
-    $("eS").value="973";   $("eH").value="10987"; $("eD").value="8";  $("eC").value="AJ1053";
-    $("sS").value="K106";  $("sH").value="AQ";    $("sD").value="102";$("sC").value="KQ7642";
-    $("wS").value="Q8";    $("wH").value="J2";    $("wD").value="AKQJ9753"; $("wC").value="8";
-  };
-
-  $("btnClear").onclick = () => {
-    for (const id of ["nS","nH","nD","nC","eS","eH","eD","eC","sS","sH","sD","sC","wS","wH","wD","wC"]) $(id).value="";
-    $("outLIN").value=""; $("outPBN").value="";
-    $("debug").textContent="DEBUG: cleared.";
-    setStatus(false);
-  };
-
-  $("btnGen").onclick = () => {
-    document.activeElement && document.activeElement.blur();
-    setTimeout(() => {
-      const h = readHands();
-      const vld = validate52(h);
-      debugDump(h, vld);
-      setStatus(vld.ok);
-      if (!vld.ok){
-        $("outLIN").value = "";
-        $("outPBN").value = "";
-        return;
-      }
-      buildOutputs(h);
-    }, 0);
-  };
-
-  $("btnCopyLin").onclick = async () => {
-    const t = $("outLIN").value || "";
-    if (!t.trim()) return;
-    await navigator.clipboard.writeText(t);
-  };
-
-  $("btnDlLin").onclick = () => {
-    const t = $("outLIN").value || "";
-    if (!t.trim()) return;
-    const blob = new Blob([t + "\n"], {type:"text/plain"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `board${boardNumber()}.lin`;
-    a.click();
-  };
-
-  $("btnOpenBSOL").onclick = () => {
-    const h = readHands();
-    const vld = validate52(h);
-    if (!vld.ok) return;
-    window.open(buildBSOLUrl(h), "_blank", "noopener,noreferrer");
-  };
-
-  $("btnOpenBBO").onclick = () => {
-    const h = readHands();
-    const vld = validate52(h);
-    if (!vld.ok) return;
-    window.open(buildBBOUrl(h), "_blank", "noopener,noreferrer");
-  };
-
-  // init
-  $("shotType").addEventListener("change", updateShotHint);
-  updateShotHint();
-  setStatus(false);
+fileInput.onchange=()=>{
+  const f=fileInput.files[0];
+  if(!f)return;
+  imgPreview.src=URL.createObjectURL(f);
+  imgPreview.style.display="block";
+  pasteMsg.textContent="Image loaded from file.";
+};
 </script>
 
 </body>
