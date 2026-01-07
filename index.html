@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MK EasyHand App</title>
 
-  <!-- Tesseract.js (OCR) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
   <style>
@@ -25,36 +24,25 @@
     .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
     .card .in{padding:14px}
     .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--muted);font-size:12px}
-    .btn{
-      border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;
-      background:#111827;color:#fff
-    }
+    .btn{border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;background:#111827;color:#fff}
     .btn.secondary{background:#374151}
     .btn.blue{background:var(--blue)}
     .btn.green{background:var(--ok)}
     .btn.red{background:var(--bad)}
     .btn:disabled{opacity:.5;cursor:not-allowed}
-    select,input[type="number"],input[type="text"]{
-      padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#fff
-    }
+    select,input[type="text"]{padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#fff}
     input[type="file"]{padding:8px;border-radius:12px;border:1px solid var(--border);background:#fff}
     .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
     @media (max-width:900px){.grid{grid-template-columns:1fr}}
     .small{font-size:12px;color:var(--muted)}
-    .status{
-      font-weight:800;display:inline-flex;align-items:center;gap:10px;
-      padding:8px 12px;border-radius:12px;border:1px solid var(--border);background:#fff
-    }
+    .status{font-weight:800;display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;border:1px solid var(--border);background:#fff}
     .status.ok{color:var(--ok)}
     .status.bad{color:var(--bad)}
     .imgBox{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff}
     #imgPreview{display:none;max-width:100%;height:auto;cursor:crosshair}
     .clickline{margin-top:8px}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    textarea{
-      width:100%;min-height:130px;border:1px solid var(--border);border-radius:14px;padding:10px;
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace
-    }
+    textarea{width:100%;min-height:130px;border:1px solid var(--border);border-radius:14px;padding:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
     .hands{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     @media (max-width:900px){.hands{grid-template-columns:1fr}}
     .handcard{border:1px solid var(--border);border-radius:16px;background:#fff}
@@ -74,7 +62,7 @@
 <header>
   <div class="wrap">
     <h1>MK EasyHand App</h1>
-    <div class="sub">Screenshot → Paste / Upload → <b>Click a suit symbol</b> → Generate LIN → Open Solver / BBO</div>
+    <div class="sub">Screenshot → Paste / Upload → <b>Click a suit icon</b> → Generate LIN → Open Solver / BBO</div>
   </div>
 </header>
 
@@ -101,9 +89,9 @@
       </div>
 
       <div class="hint">
-        <b>FIGB mode (Source C):</b> paste/upload → <b>click directly on a suit icon</b> (♠/♥/♦/♣) near the hand you want to read.
-        OCR is “restricted” (only AKQJT98765432, 10→T).<br/>
-        Tip: If needed, use <span class="kbd">Ctrl+F5</span> or add <span class="kbd">?v=123</span> to your URL to bypass cache.
+        <b>FIGB mode (Source C):</b> paste/upload → click directly on <b>ONE</b> suit icon (♠/♥/♦/♣).<br/>
+        This version does <b>NOT</b> search the other 3 icons: it uses vertical offsets anchored to the clicked icon (more robust).<br/>
+        Tip: use <span class="kbd">Ctrl+F5</span> or add <span class="kbd">?v=123</span> to bypass cache.
       </div>
     </div>
   </div>
@@ -111,7 +99,6 @@
   <div style="height:14px"></div>
 
   <div class="grid">
-    <!-- LEFT: image -->
     <div class="card">
       <div class="in">
         <div class="imgBox">
@@ -124,7 +111,6 @@
       </div>
     </div>
 
-    <!-- RIGHT: debug + outputs -->
     <div class="card">
       <div class="in">
         <div class="small"><b>Debug</b> (last run)</div>
@@ -163,7 +149,6 @@
 
   <div style="height:14px"></div>
 
-  <!-- Manual input fallback -->
   <div class="card">
     <div class="in">
       <div class="small"><b>Manual hand input</b> (optional)</div>
@@ -223,9 +208,6 @@
 </div>
 
 <script>
-/* ===========================
-   Helpers
-=========================== */
 const $ = (id)=>document.getElementById(id);
 
 const imgPreview = $("imgPreview");
@@ -267,8 +249,6 @@ function normalizeRanks(s){
 function countChars(s){ return (s||"").length; }
 
 function buildPBN(dealer="N", vul="None", hands){
-  // PBN "Deal" format: N:spades.hearts.diamonds.clubs (for N, E, S, W)
-  // We'll output minimal PBN.
   const fmt = (h)=>`${h.S||""}.${h.H||""}.${h.D||""}.${h.C||""}`;
   return [
     '[Event "MK EasyHand"]',
@@ -280,12 +260,7 @@ function buildPBN(dealer="N", vul="None", hands){
 }
 
 function buildLIN(board=1, dealer="N", vul="o", hands){
-  // Minimal LIN for BBO is not perfectly standardized across all tools,
-  // but BBO Handviewer accepts "s=..h=..d=..c=.." blocks (we build those too in URL).
-  // We'll output a simple "md|" deal string used by many LIN snippets.
-  // Order in md: N, E, S, W with commas.
   const pack = (h)=>`${h.S||""}${h.H||""}${h.D||""}${h.C||""}`;
-  // NOTE: we keep commas; external tools interpret.
   return `pn|N,E,S,W|sv|${vul}|bd|${board}|md|3${pack(hands.N)},${pack(hands.E)},${pack(hands.S)},${pack(hands.W)}|`;
 }
 
@@ -302,7 +277,6 @@ function clearOutputs(){
 }
 
 function validateAll(h){
-  // h: {N:{S,H,D,C}, E..., S..., W...}
   const seatCounts = {
     N: countChars(h.N.S)+countChars(h.N.H)+countChars(h.N.D)+countChars(h.N.C),
     E: countChars(h.E.S)+countChars(h.E.H)+countChars(h.E.D)+countChars(h.E.C),
@@ -311,7 +285,6 @@ function validateAll(h){
   };
   const total = seatCounts.N + seatCounts.E + seatCounts.S + seatCounts.W;
 
-  // duplicates check
   const seen = new Map();
   const dups = [];
   for(const seat of ["N","E","S","W"]){
@@ -320,14 +293,9 @@ function validateAll(h){
       for(const ch of str){
         const key = suit + ch;
         const prev = seen.get(key);
-        if(prev && prev !== seat){
-          dups.push(`${key} in ${prev}+${seat}`);
-        }else if(prev && prev === seat){
-          // duplicate within same seat (rare unless OCR repeats)
-          dups.push(`${key} twice in ${seat}`);
-        }else{
-          seen.set(key, seat);
-        }
+        if(prev && prev !== seat) dups.push(`${key} in ${prev}+${seat}`);
+        else if(prev && prev === seat) dups.push(`${key} twice in ${seat}`);
+        else seen.set(key, seat);
       }
     }
   }
@@ -342,10 +310,8 @@ function validateAll(h){
   return { ok: errs.length===0, total, seatCounts, errs };
 }
 
-/* ===========================
-   Image handling (paste/upload)
-=========================== */
-let currentImage = null; // HTMLImageElement
+/* ===== Image handling ===== */
+let currentImage = null;
 let canvas = document.createElement("canvas");
 let ctx = canvas.getContext("2d", { willReadFrequently: true });
 
@@ -357,7 +323,7 @@ function loadImageFromBlob(blob){
     imgPreview.src = url;
     imgPreview.style.display = "block";
     imgMsg.textContent = "Image loaded ✅";
-    flowMsg.textContent = "Image ready. Click on a suit symbol (FIGB) or use manual input.";
+    flowMsg.textContent = "Image ready. Click on a suit icon (FIGB) or use manual input.";
     clickMsg.textContent = "";
     setStatus(false, "Image ready. Click a suit icon, then Generate.");
     clearOutputs();
@@ -387,9 +353,7 @@ window.addEventListener("paste", (ev)=>{
   const dt = ev.clipboardData;
   if(!dt) return;
   const file = Array.from(dt.files || []).find(f => f.type.startsWith("image/"));
-  if(file){
-    loadImageFromBlob(file);
-  }
+  if(file) loadImageFromBlob(file);
 });
 
 fileInput.addEventListener("change", ()=>{
@@ -398,10 +362,6 @@ fileInput.addEventListener("change", ()=>{
   loadImageFromBlob(f);
 });
 
-/* ===========================
-   FIGB: symbol-anchored OCR (single player)
-   User clicks on any suit icon; we detect that icon blob and read the 4 suit rows for that player.
-=========================== */
 function drawToCanvas(){
   if(!currentImage) return;
   canvas.width = currentImage.naturalWidth || currentImage.width;
@@ -424,21 +384,15 @@ function rgbAt(x,y){
   return {r:d[0], g:d[1], b:d[2], a:d[3]};
 }
 
-// crude color classifiers for FIGB suit icons
 function classifySuitColor({r,g,b}){
-  // spade: blue-ish
-  if(b > 140 && r < 120 && g < 160) return "S";
-  // heart: red
-  if(r > 160 && g < 110 && b < 120) return "H";
-  // diamond: orange
-  if(r > 170 && g > 90 && g < 170 && b < 120) return "D";
-  // club: green
-  if(g > 140 && r < 140 && b < 140) return "C";
+  if(b > 140 && r < 120 && g < 170) return "S";          // spade blue
+  if(r > 160 && g < 120 && b < 130) return "H";          // heart red
+  if(r > 170 && g > 90 && g < 175 && b < 140) return "D"; // diamond orange
+  if(g > 140 && r < 150 && b < 150) return "C";          // club green
   return null;
 }
 
-function floodBlobBBox(seedX, seedY, suit, maxPx=9000){
-  // BFS flood fill around clicked pixel collecting same suit color class
+function floodBlobBBox(seedX, seedY, suit, maxPx=12000){
   const q = [[seedX,seedY]];
   const visited = new Set();
   let minX=seedX, maxX=seedX, minY=seedY, maxY=seedY;
@@ -453,22 +407,20 @@ function floodBlobBBox(seedX, seedY, suit, maxPx=9000){
     if(visited.has(k)) continue;
     visited.add(k);
 
-    const c = rgbAt(x,y);
-    const s = classifySuitColor(c);
+    const s = classifySuitColor(rgbAt(x,y));
     if(s !== suit) continue;
 
     count++;
     if(x<minX) minX=x; if(x>maxX) maxX=x;
     if(y<minY) minY=y; if(y>maxY) maxY=y;
 
-    // neighbors (4-connect)
     if(inBounds(x+1,y)) q.push([x+1,y]);
     if(inBounds(x-1,y)) q.push([x-1,y]);
     if(inBounds(x,y+1)) q.push([x,y+1]);
     if(inBounds(x,y-1)) q.push([x,y-1]);
   }
 
-  if(count < 60) return null; // too small to be an icon blob
+  if(count < 60) return null;
   return {minX, maxX, minY, maxY, count};
 }
 
@@ -491,175 +443,113 @@ async function ocrROI(dataURL){
   return txt;
 }
 
-let figbAnchor = null; // {x,y,suit,bbox, iconW, iconH}
+/* ===== FIGB Anchor state ===== */
+let figbAnchor = null; // {suit, bbox, centerX, centerY, iconW, iconH}
 
-imgPreview.addEventListener("click", async (ev)=>{
-  if(!currentImage){ return; }
+function suitIndex(s){ return ({S:0,H:1,D:2,C:3})[s]; }
+
+imgPreview.addEventListener("click", (ev)=>{
+  if(!currentImage) return;
   drawToCanvas();
 
   const {x,y,nx,ny} = imgToCanvasXY(ev.clientX, ev.clientY);
-  const c = rgbAt(x,y);
-  const suit = classifySuitColor(c);
+  const suit = classifySuitColor(rgbAt(x,y));
 
   clickMsg.textContent = `Clicked at x=${x}, y=${y} | normalized (${nx.toFixed(3)}, ${ny.toFixed(3)})`;
 
   if(sourceSel.value !== "C"){
-    flowMsg.textContent = "Click-detection is currently optimized for FIGB (Source C).";
+    flowMsg.textContent = "Click-detection is optimized for FIGB (Source C).";
     return;
   }
   if(!suit){
-    flowMsg.textContent = "Please click directly on a suit icon (♠/♥/♦/♣).";
+    flowMsg.textContent = "Please click directly on a colored suit icon (♠/♥/♦/♣).";
     return;
   }
 
   const bbox = floodBlobBBox(x,y,suit);
   if(!bbox){
-    flowMsg.textContent = "Could not lock on the suit icon blob. Try clicking closer to the colored icon.";
+    flowMsg.textContent = "Could not lock onto the icon blob. Try clicking more inside the colored icon.";
     return;
   }
 
   const iconW = bbox.maxX - bbox.minX + 1;
   const iconH = bbox.maxY - bbox.minY + 1;
+  const centerX = Math.round((bbox.minX + bbox.maxX)/2);
+  const centerY = Math.round((bbox.minY + bbox.maxY)/2);
 
-  figbAnchor = { x, y, suit, bbox, iconW, iconH };
-
-  flowMsg.textContent = `Anchor set: clicked ${suit}. Now press “Generate” to OCR this player's 4 suit lines.`;
+  figbAnchor = { suit, bbox, centerX, centerY, iconW, iconH };
+  flowMsg.textContent = `Anchor set on ${suit}. Now press Generate to OCR the 4 suit lines for this player (no icon search).`;
 });
 
-/* ===========================
-   Generate (manual or FIGB OCR)
-=========================== */
+/* ===== Generate ===== */
 function readManualHands(){
-  const h = {
+  return {
     N:{S:normalizeRanks(inputs.nS.value),H:normalizeRanks(inputs.nH.value),D:normalizeRanks(inputs.nD.value),C:normalizeRanks(inputs.nC.value)},
     E:{S:normalizeRanks(inputs.eS.value),H:normalizeRanks(inputs.eH.value),D:normalizeRanks(inputs.eD.value),C:normalizeRanks(inputs.eC.value)},
     S:{S:normalizeRanks(inputs.sS.value),H:normalizeRanks(inputs.sH.value),D:normalizeRanks(inputs.sD.value),C:normalizeRanks(inputs.sC.value)},
     W:{S:normalizeRanks(inputs.wS.value),H:normalizeRanks(inputs.wH.value),D:normalizeRanks(inputs.wD.value),C:normalizeRanks(inputs.wC.value)},
   };
-  return h;
 }
 
 async function genFromFIGBAnchor(){
-  if(!currentImage || !figbAnchor){
-    throw new Error("FIGB mode: paste/upload an image and click a suit icon first.");
-  }
+  if(!currentImage || !figbAnchor) throw new Error("FIGB: paste/upload then click a suit icon first.");
   drawToCanvas();
 
-  const b = figbAnchor.bbox;
-  const iconW = Math.max(12, figbAnchor.iconW);
-  const iconH = Math.max(12, figbAnchor.iconH);
+  const { suit, bbox, iconW, iconH, centerX, centerY } = figbAnchor;
 
-  // Estimate suit-row vertical step: roughly 1.25 * iconH (safe)
-  const stepY = Math.round(iconH * 1.35);
+  // Estimate line spacing: icons are fairly tall; step ~ 1.40 * iconH works well on FIGB screenshots
+  const stepY = Math.max(22, Math.round(iconH * 1.40));
 
-  // Use the blob center as row0 reference
-  const row0Y = Math.round((b.minY + b.maxY) / 2);
+  // Use the clicked icon as reference for X (where text begins)
+  const padX = Math.round(iconW * 0.65);
+  const textX = Math.min(canvas.width-1, bbox.maxX + padX);
 
-  // Find the four suit rows by scanning around expected y offsets
-  // We assume clicked icon belongs to one of the 4 rows; we will search near it for the nearest 4-row stack.
-  // Strategy: define a column x around icon center, then sample upward/downward to locate 4 colored icons in a stack.
-  const colX = Math.round((b.minX + b.maxX) / 2);
+  // ROI size
+  const roiW = Math.min(canvas.width - textX, Math.max(180, Math.round(iconW * 9.0))); // wide text strip
+  const roiH = Math.min(canvas.height, Math.max(26, Math.round(iconH * 1.55)));        // line height
 
-  // We build candidate row centers: y-1*step, y, y+1*step, y+2*step and later sort.
-  const candidates = [row0Y - stepY, row0Y, row0Y + stepY, row0Y + 2*stepY];
-
-  // For each candidate, find actual blob by searching in a small window around (colX, yCand)
-  function findNearbySuitAt(yCand){
-    const r = 14; // search radius
-    for(let dy=-r; dy<=r; dy++){
-      for(let dx=-r; dx<=r; dx++){
-        const xx = colX + dx, yy = yCand + dy;
-        if(xx<0||yy<0||xx>=canvas.width||yy>=canvas.height) continue;
-        const s = classifySuitColor(rgbAt(xx,yy));
-        if(s){
-          const bb = floodBlobBBox(xx,yy,s,5000);
-          if(bb){
-            const cy = Math.round((bb.minY+bb.maxY)/2);
-            const cx = Math.round((bb.minX+bb.maxX)/2);
-            return {suit:s, bb, cx, cy};
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  const found = [];
-  for(const yCand of candidates){
-    const f = findNearbySuitAt(yCand);
-    if(f) found.push(f);
-  }
-
-  // Deduplicate by suit (we want S/H/D/C once each)
-  const bySuit = {};
-  for(const f of found){
-    if(!bySuit[f.suit]) bySuit[f.suit] = f;
-  }
-
-  // If not all 4 suits found, try expanding search (more candidates)
-  if(Object.keys(bySuit).length < 4){
-    const more = [row0Y - 2*stepY, row0Y + 3*stepY, row0Y - 3*stepY, row0Y + 4*stepY];
-    for(const yCand of more){
-      const f = findNearbySuitAt(yCand);
-      if(f && !bySuit[f.suit]) bySuit[f.suit] = f;
-      if(Object.keys(bySuit).length === 4) break;
-    }
-  }
-
+  // Determine y center for each suit line by relative offsets from clicked suit
+  const idxClicked = suitIndex(suit); // 0..3
   const suits = ["S","H","D","C"];
-  const missing = suits.filter(s => !bySuit[s]);
-  if(missing.length){
-    throw new Error("Could not locate all 4 suit icons for this player. Missing: " + missing.join(", ") + ". Try clicking a different suit icon (preferably ♠ of that player).");
-  }
+  const out = {S:"",H:"",D:"",C:""};
 
-  // Now crop text ROIs to the right of each suit icon
-  // ROI box:
-  //   x starts a little right of icon bbox
-  //   y spans icon bbox with some padding
-  //   width: large enough to capture ranks
-  const results = {S:"",H:"",D:"",C:""};
-  for(const s of suits){
-    const bb = bySuit[s].bb;
+  // For each target suit line i, its centerY = clickedCenterY + (i-idxClicked)*stepY
+  // Crop at y = centerY - roiH/2
+  for(let i=0;i<4;i++){
+    const sy = suits[i];
+    const cy = centerY + (i - idxClicked) * stepY;
 
-    const padY = Math.round(iconH * 0.45);
-    const roiX = Math.min(canvas.width-1, bb.maxX + Math.round(iconW * 0.55));
-    const roiY = Math.max(0, bb.minY - padY);
-    const roiW = Math.max(40, Math.round(iconW * 8.0)); // long enough for "AKQJT987..."
-    const roiH = Math.min(canvas.height - roiY, (bb.maxY - bb.minY + 1) + 2*padY);
+    const x = textX;
+    const y = Math.max(0, Math.min(canvas.height-1, Math.round(cy - roiH/2)));
+    const h = Math.min(canvas.height - y, roiH);
 
-    const safeW = Math.min(canvas.width - roiX, roiW);
-    const safeH = Math.min(canvas.height - roiY, roiH);
-
-    const dataURL = cropToDataURL(roiX, roiY, safeW, safeH);
+    const dataURL = cropToDataURL(x, y, roiW, h);
     const txt = await ocrROI(dataURL);
-    results[s] = txt;
+    out[sy] = txt;
   }
 
-  // Place these 13 cards into NORTH by default (single-player OCR test)
-  // User can later move to correct seat, or we extend to 4 seats next.
-  const h = {
-    N:{S:results.S,H:results.H,D:results.D,C:results.C},
+  // Put into North for now (single-player OCR test)
+  const hands = {
+    N:{S:out.S,H:out.H,D:out.D,C:out.C},
     E:{S:"",H:"",D:"",C:""},
     S:{S:"",H:"",D:"",C:""},
     W:{S:"",H:"",D:"",C:""},
   };
 
-  // Mirror into manual UI so user sees it
-  inputs.nS.value = h.N.S; inputs.nH.value = h.N.H; inputs.nD.value = h.N.D; inputs.nC.value = h.N.C;
+  // Show in UI
+  inputs.nS.value = hands.N.S; inputs.nH.value = hands.N.H; inputs.nD.value = hands.N.D; inputs.nC.value = hands.N.C;
 
-  return h;
+  return hands;
 }
 
 genBtn.addEventListener("click", async ()=>{
   clearOutputs();
 
-  const source = sourceSel.value;
-
   try{
     let hands = null;
 
-    if(source === "C" && currentImage && figbAnchor){
-      flowMsg.textContent = "Running FIGB OCR (symbol-anchored) …";
+    if(sourceSel.value === "C" && currentImage && figbAnchor){
+      flowMsg.textContent = "Running FIGB OCR (anchor offsets) …";
       debugOut.value = "FIGB OCR: starting…\n";
       hands = await genFromFIGBAnchor();
       debugOut.value += "FIGB OCR: done.\n\n";
@@ -668,8 +558,15 @@ genBtn.addEventListener("click", async ()=>{
       debugOut.value = "Manual input used.\n\n";
     }
 
-    // Validate
+    // normalize fields
+    for(const seat of ["N","E","S","W"]){
+      for(const su of ["S","H","D","C"]){
+        hands[seat][su] = normalizeRanks(hands[seat][su]);
+      }
+    }
+
     const v = validateAll(hands);
+
     debugOut.value += "Hands:\n";
     debugOut.value += `N S=${hands.N.S} H=${hands.N.H} D=${hands.N.D} C=${hands.N.C}\n`;
     debugOut.value += `E S=${hands.E.S} H=${hands.E.H} D=${hands.E.D} C=${hands.E.C}\n`;
@@ -679,17 +576,14 @@ genBtn.addEventListener("click", async ()=>{
     debugOut.value += `Validation: OK=${v.ok} total=${v.total}\n`;
     if(v.errs.length){
       debugOut.value += "Errors:\n - " + v.errs.join("\n - ") + "\n";
-      setStatus(false, "Validation KO. Fix duplicates/missing cards or click a cleaner suit icon.");
+      setStatus(false, "Validation KO. OCR may have missed/added ranks. Try clicking ♠ of that player (best).");
     }else{
       debugOut.value += "No errors.\n";
-      setStatus(true, "Validation OK. You can copy/download LIN or open Solver/BBO.");
+      setStatus(true, "Validation OK. Copy/download LIN or open Solver/BBO.");
     }
 
-    // Build outputs anyway (even if KO, user might want to inspect)
-    const lin = buildLIN(1, "N", "o", hands);
-    const pbn = buildPBN("N", "None", hands);
-    linOut.value = lin;
-    pbnOut.value = pbn;
+    linOut.value = buildLIN(1, "N", "o", hands);
+    pbnOut.value = buildPBN("N", "None", hands);
 
   }catch(e){
     setStatus(false, "Cannot generate. " + (e?.message || e));
@@ -697,9 +591,7 @@ genBtn.addEventListener("click", async ()=>{
   }
 });
 
-/* ===========================
-   Buttons: copy/download/open
-=========================== */
+/* ===== Buttons ===== */
 copyLinBtn.addEventListener("click", async ()=>{
   if(!linOut.value) return;
   await navigator.clipboard.writeText(linOut.value);
@@ -717,26 +609,11 @@ dlLinBtn.addEventListener("click", ()=>{
   URL.revokeObjectURL(url);
 });
 
-function openBSOL(){
-  // Bridge Solver Online supports URL params (varies by deployment).
-  // We provide a simple query with PBN deal if possible; otherwise user can paste LIN.
-  // We'll open their site and user can paste the LIN/PBN.
-  window.open("https://www.bridgebase.com/tools/handviewer.html", "_blank");
-}
+openBsolBtn.addEventListener("click", ()=>window.open("https://www.bridgebase.com/tools/handviewer.html","_blank"));
+openBboBtn.addEventListener("click", ()=>window.open("https://www.bridgebase.com/tools/handviewer.html","_blank"));
 
-function openBBOHandviewer(){
-  // BBO Handviewer accepts parameters; simplest is open the handviewer page.
-  window.open("https://www.bridgebase.com/tools/handviewer.html", "_blank");
-}
-
-openBsolBtn.addEventListener("click", openBSOL);
-openBboBtn.addEventListener("click", openBBOHandviewer);
-
-/* ===========================
-   Sample + Clear
-=========================== */
+/* ===== Sample / Clear ===== */
 loadSampleBtn.addEventListener("click", ()=>{
-  // sample from your earlier board 1
   inputs.nS.value="AJ542"; inputs.nH.value="K6543"; inputs.nD.value="64"; inputs.nC.value="9";
   inputs.eS.value="973";   inputs.eH.value="T987";  inputs.eD.value="8";  inputs.eC.value="AJT53";
   inputs.sS.value="KT6";   inputs.sH.value="AQ";    inputs.sD.value="T2"; inputs.sC.value="KQ7642";
