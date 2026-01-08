@@ -4,629 +4,612 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MK EasyHand App</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
   <style>
     :root{
-      --bg:#f6f7f9; --card:#fff; --text:#111827; --muted:#6b7280;
-      --ok:#16a34a; --bad:#dc2626; --blue:#2563eb; --border:#e5e7eb;
-      --shadow:0 10px 30px rgba(0,0,0,.06);
-      --radius:16px;
+      --bg:#f6f7fb; --card:#fff; --txt:#111827; --muted:#6b7280;
+      --ok:#16a34a; --bad:#dc2626; --btn:#2563eb;
+      --bd:#e5e7eb;
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
-    header{background:#fff;border-bottom:1px solid var(--border)}
-    .wrap{max-width:1100px;margin:0 auto;padding:16px}
-    h1{margin:0;font-size:28px}
-    .sub{margin-top:6px;color:var(--muted)}
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
-    .card .in{padding:14px}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--muted);font-size:12px}
-    .btn{border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;background:#111827;color:#fff}
-    .btn.secondary{background:#374151}
-    .btn.blue{background:var(--blue)}
-    .btn.green{background:var(--ok)}
-    .btn.red{background:var(--bad)}
-    .btn:disabled{opacity:.5;cursor:not-allowed}
-    select,input[type="text"]{padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#fff}
-    input[type="file"]{padding:8px;border-radius:12px;border:1px solid var(--border);background:#fff}
-    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--txt);}
+    header{padding:14px 16px; background:#fff; border-bottom:1px solid var(--bd);}
+    header h1{margin:0;font-size:20px; font-weight:800;}
+    header .sub{margin-top:4px;color:var(--muted);font-size:13px}
+
+    .wrap{max-width:1050px;margin:0 auto;padding:14px 16px 24px;}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+    .card{background:var(--card); border:1px solid var(--bd); border-radius:12px; padding:12px; margin-top:12px;}
+    label{font-size:13px;color:var(--muted)}
+    select, input[type="file"], input[type="text"], textarea{
+      font:inherit; border:1px solid var(--bd); border-radius:10px; padding:10px; background:#fff;
+    }
+    input[type="text"]{padding:8px 10px}
+    textarea{width:100%; min-height:110px; resize:vertical}
+
+    button{
+      border:0; border-radius:10px; padding:10px 12px; font-weight:700; cursor:pointer;
+      color:#fff; background:var(--btn);
+    }
+    button.secondary{background:#374151}
+    button.ghost{background:#e5e7eb; color:#111827}
+    button:disabled{opacity:.6; cursor:not-allowed}
+
+    .pill{display:inline-flex; gap:8px; align-items:center; padding:8px 10px; border-radius:999px; border:1px solid var(--bd); background:#fff; font-weight:700}
+    .ok{color:var(--ok)}
+    .bad{color:var(--bad)}
     .small{font-size:12px;color:var(--muted)}
-    .status{font-weight:800;display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;border:1px solid var(--border);background:#fff}
-    .status.ok{color:var(--ok)}
-    .status.bad{color:var(--bad)}
-    .imgBox{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff}
-    #imgPreview{display:none;max-width:100%;height:auto;cursor:crosshair}
-    .clickline{margin-top:8px}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    textarea{width:100%;min-height:130px;border:1px solid var(--border);border-radius:14px;padding:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    .hands{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media (max-width:900px){.hands{grid-template-columns:1fr}}
-    .handcard{border:1px solid var(--border);border-radius:16px;background:#fff}
-    .handcard .title{padding:10px 12px;border-bottom:1px solid var(--border);font-weight:900}
-    .handcard .body{padding:12px}
-    .suitRow{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:center;margin:8px 0}
-    .suitIcon{font-size:18px}
-    .s{color:#2563eb} .h{color:#dc2626} .d{color:#f59e0b} .c{color:#16a34a}
-    .twoCols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media (max-width:900px){.twoCols{grid-template-columns:1fr}}
-    .hint{margin-top:10px;padding:10px;border:1px dashed var(--border);border-radius:14px;background:#fff;color:var(--muted)}
-    .kbd{font-family:ui-monospace;background:#f3f4f6;border:1px solid #e5e7eb;padding:2px 6px;border-radius:8px;color:#111827}
+    .hint{font-size:12px;color:var(--muted); margin-top:6px}
+
+    /* Layout */
+    .grid2{display:grid; grid-template-columns:1.25fr .75fr; gap:12px}
+    @media (max-width: 920px){
+      .grid2{grid-template-columns:1fr}
+    }
+
+    /* Image */
+    #imgBox{display:none}
+    #imgPreview{
+      max-width:100%; border:1px solid var(--bd); border-radius:12px; display:block;
+      background:#fff;
+    }
+    #clickMsg{margin-top:8px}
+
+    /* Table */
+    .handTable{
+      width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:12px;
+      border:1px solid var(--bd);
+      background:#fff;
+    }
+    .handTable th, .handTable td{border-bottom:1px solid var(--bd); border-right:1px solid var(--bd); padding:10px; font-size:14px}
+    .handTable th:last-child,.handTable td:last-child{border-right:0}
+    .handTable tr:last-child td{border-bottom:0}
+    .handTable th{background:#f9fafb; text-align:left}
+    .seat{font-weight:900; width:72px}
+    .suitHead{font-weight:900}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;}
+    .topActions{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between}
+    .leftActions{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .rightActions{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+
+    details{margin-top:8px}
+    summary{cursor:pointer; color:var(--muted); font-size:13px}
   </style>
 </head>
-
 <body>
 <header>
-  <div class="wrap">
-    <h1>MK EasyHand App</h1>
-    <div class="sub">Screenshot → Paste / Upload → <b>Click a suit icon</b> → Generate LIN → Open Solver / BBO</div>
-  </div>
+  <h1>MK EasyHand App</h1>
+  <div class="sub">Screenshot → <b>Paste</b> → (click image) → OCR → <b>Hand table</b> → LIN / PBN</div>
 </header>
 
 <div class="wrap">
-  <div class="card">
-    <div class="in">
-      <div class="row">
-        <label><b>Source:</b></label>
-        <select id="sourceSel">
-          <option value="A">A – RealBridge</option>
-          <option value="B">B – BBO</option>
-          <option value="C" selected>C – Federation / Local (FIGB)</option>
-          <option value="D">D – LoveBridge / WBF</option>
-        </select>
-
-        <button class="btn blue" id="pasteBtn">📋 Paste</button>
-        <input type="file" id="fileInput" accept="image/*">
-
-        <span id="imgMsg" class="pill">No image yet.</span>
-
-        <span class="status bad" id="statusBadge">Validation: KO ✖</span>
-
-        <button class="btn green" id="genBtn">Generate LIN/PBN (validate)</button>
-      </div>
-
-      <div class="hint">
-        <b>FIGB mode (Source C):</b> paste/upload → click directly on <b>ONE</b> suit icon (♠/♥/♦/♣).<br/>
-        This version does <b>NOT</b> search the other 3 icons: it uses vertical offsets anchored to the clicked icon (more robust).<br/>
-        Tip: use <span class="kbd">Ctrl+F5</span> or add <span class="kbd">?v=123</span> to bypass cache.
-      </div>
-    </div>
-  </div>
-
-  <div style="height:14px"></div>
-
-  <div class="grid">
-    <div class="card">
-      <div class="in">
-        <div class="imgBox">
-          <img id="imgPreview" alt="preview">
-        </div>
-        <div class="clickline small mono" id="clickMsg"></div>
-        <div class="small" style="margin-top:8px">
-          <b>Status:</b> <span id="flowMsg">Paste or upload an image.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="in">
-        <div class="small"><b>Debug</b> (last run)</div>
-        <textarea id="debugOut" readonly class="mono" style="min-height:160px"></textarea>
-
-        <div style="height:10px"></div>
-
-        <div class="twoCols">
-          <div>
-            <div class="small"><b>LIN output</b></div>
-            <textarea id="linOut" readonly class="mono"></textarea>
-            <div class="row" style="margin-top:10px">
-              <button class="btn secondary" id="copyLinBtn">Copy LIN</button>
-              <button class="btn blue" id="dlLinBtn">Download .lin</button>
-            </div>
-          </div>
-
-          <div>
-            <div class="small"><b>PBN output</b></div>
-            <textarea id="pbnOut" readonly class="mono"></textarea>
-            <div class="small" style="margin-top:10px">
-              PBN is useful for many solvers/tools. LIN is best for BBO / quick sharing.
-            </div>
-          </div>
-        </div>
-
-        <div style="height:10px"></div>
-
-        <div class="row">
-          <button class="btn secondary" id="openBsolBtn">Open Bridge Solver Online</button>
-          <button class="btn secondary" id="openBboBtn">Open BBO Handviewer</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div style="height:14px"></div>
 
   <div class="card">
-    <div class="in">
-      <div class="small"><b>Manual hand input</b> (optional)</div>
-      <div class="small">Allowed ranks: <span class="mono">AKQJT98765432</span> (10 or T). No spaces.</div>
-
-      <div style="height:10px"></div>
-
-      <div class="hands">
-        <div class="handcard">
-          <div class="title">North</div>
-          <div class="body">
-            <div class="suitRow"><div class="suitIcon s">♠</div><input id="nS" type="text" placeholder="e.g. AKQJ" /></div>
-            <div class="suitRow"><div class="suitIcon h">♥</div><input id="nH" type="text" placeholder="e.g. T987" /></div>
-            <div class="suitRow"><div class="suitIcon d">♦</div><input id="nD" type="text" placeholder="e.g. 642" /></div>
-            <div class="suitRow"><div class="suitIcon c">♣</div><input id="nC" type="text" placeholder="e.g. A73" /></div>
-          </div>
+    <div class="topActions">
+      <div class="leftActions">
+        <div>
+          <label for="sourceSel">Source</label><br/>
+          <select id="sourceSel">
+            <option value="A">A — RealBridge</option>
+            <option value="B">B — BBO</option>
+            <option value="C">C — Federation / Local (FIGB)</option>
+            <option value="D">D — Bulletin (ACBL/EBL/WBF style)</option>
+          </select>
+          <div class="hint" id="srcHint"></div>
         </div>
 
-        <div class="handcard">
-          <div class="title">South</div>
-          <div class="body">
-            <div class="suitRow"><div class="suitIcon s">♠</div><input id="sS" type="text" /></div>
-            <div class="suitRow"><div class="suitIcon h">♥</div><input id="sH" type="text" /></div>
-            <div class="suitRow"><div class="suitIcon d">♦</div><input id="sD" type="text" /></div>
-            <div class="suitRow"><div class="suitIcon c">♣</div><input id="sC" type="text" /></div>
-          </div>
+        <button id="pasteBtn" title="Paste image from clipboard">📋 Paste</button>
+
+        <div>
+          <label for="fileInput">Upload</label><br/>
+          <input id="fileInput" type="file" accept="image/*" />
         </div>
 
-        <div class="handcard">
-          <div class="title">East</div>
-          <div class="body">
-            <div class="suitRow"><div class="suitIcon s">♠</div><input id="eS" type="text" /></div>
-            <div class="suitRow"><div class="suitIcon h">♥</div><input id="eH" type="text" /></div>
-            <div class="suitRow"><div class="suitIcon d">♦</div><input id="eD" type="text" /></div>
-            <div class="suitRow"><div class="suitIcon c">♣</div><input id="eC" type="text" /></div>
-          </div>
-        </div>
-
-        <div class="handcard">
-          <div class="title">West</div>
-          <div class="body">
-            <div class="suitRow"><div class="suitIcon s">♠</div><input id="wS" type="text" /></div>
-            <div class="suitRow"><div class="suitIcon h">♥</div><input id="wH" type="text" /></div>
-            <div class="suitRow"><div class="suitIcon d">♦</div><input id="wD" type="text" /></div>
-            <div class="suitRow"><div class="suitIcon c">♣</div><input id="wC" type="text" /></div>
-          </div>
-        </div>
+        <span class="pill" id="imgState">Image: <span class="bad" id="imgOk">not loaded</span></span>
+        <span class="pill">Validation: <span id="valState" class="bad">KO ✖</span></span>
       </div>
 
-      <div style="height:10px"></div>
-      <div class="row">
-        <button class="btn secondary" id="loadSampleBtn">Load sample</button>
-        <button class="btn red" id="clearBtn">Clear</button>
+      <div class="rightActions">
+        <button class="secondary" id="ocrBtn" disabled>Run OCR → Table</button>
+        <button class="secondary" id="clearBtn">Clear</button>
+      </div>
+    </div>
+
+    <div class="hint">
+      Tip: On mobile, after taking a screenshot, use <b>Paste</b>. If OCR struggles, <b>click near the suit icons</b> of the hand you want to read (anchor).
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card" id="imgBox">
+      <div class="small"><b>Click on image</b> to set an anchor (recommended for Source C / FIGB).</div>
+      <img id="imgPreview" alt="Preview" />
+      <div id="clickMsg" class="small"></div>
+
+      <details>
+        <summary>Diagnostics (optional)</summary>
+        <pre id="diag" class="small mono" style="white-space:pre-wrap"></pre>
+      </details>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:900; margin-bottom:8px;">Hand table (only 52 cards)</div>
+
+      <table class="handTable">
+        <thead>
+          <tr>
+            <th class="seat">Seat</th>
+            <th class="suitHead">♠</th>
+            <th class="suitHead">♥</th>
+            <th class="suitHead">♦</th>
+            <th class="suitHead">♣</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="seat">N</td>
+            <td><input id="N_S" type="text" class="mono" placeholder="e.g. AKQJ" /></td>
+            <td><input id="N_H" type="text" class="mono" placeholder="e.g. T987" /></td>
+            <td><input id="N_D" type="text" class="mono" placeholder="e.g. 642" /></td>
+            <td><input id="N_C" type="text" class="mono" placeholder="e.g. A73" /></td>
+          </tr>
+          <tr>
+            <td class="seat">E</td>
+            <td><input id="E_S" type="text" class="mono" /></td>
+            <td><input id="E_H" type="text" class="mono" /></td>
+            <td><input id="E_D" type="text" class="mono" /></td>
+            <td><input id="E_C" type="text" class="mono" /></td>
+          </tr>
+          <tr>
+            <td class="seat">S</td>
+            <td><input id="S_S" type="text" class="mono" /></td>
+            <td><input id="S_H" type="text" class="mono" /></td>
+            <td><input id="S_D" type="text" class="mono" /></td>
+            <td><input id="S_C" type="text" class="mono" /></td>
+          </tr>
+          <tr>
+            <td class="seat">W</td>
+            <td><input id="W_S" type="text" class="mono" /></td>
+            <td><input id="W_H" type="text" class="mono" /></td>
+            <td><input id="W_D" type="text" class="mono" /></td>
+            <td><input id="W_C" type="text" class="mono" /></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="row" style="margin-top:10px">
+        <button class="secondary" id="genBtn">Generate LIN / PBN</button>
+        <span class="small" id="msg"></span>
       </div>
     </div>
   </div>
+
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:6px;">LIN output</div>
+    <textarea id="linOut" class="mono" placeholder="(will appear here)"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="ghost" id="copyLin">Copy LIN</button>
+      <button class="ghost" id="dlLin">Download .lin</button>
+      <button class="secondary" id="openBSOL">Open Bridge Solver Online</button>
+      <button class="secondary" id="openBBO">Open BBO Handviewer</button>
+    </div>
+    <div class="hint">Tip: If you don’t see updates on GitHub Pages, hard-refresh (Ctrl+F5) or change URL like <span class="mono">?v=123</span>.</div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:6px;">PBN output</div>
+    <textarea id="pbnOut" class="mono" placeholder="(will appear here)"></textarea>
+  </div>
+
 </div>
 
+<!-- Tesseract.js for OCR (client-side, static, no server) -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <script>
-const $ = (id)=>document.getElementById(id);
-
-const imgPreview = $("imgPreview");
-const fileInput  = $("fileInput");
-const pasteBtn   = $("pasteBtn");
-const imgMsg     = $("imgMsg");
-const clickMsg   = $("clickMsg");
-const flowMsg    = $("flowMsg");
-const sourceSel  = $("sourceSel");
-
-const genBtn     = $("genBtn");
-const debugOut   = $("debugOut");
-const linOut     = $("linOut");
-const pbnOut     = $("pbnOut");
-const statusBadge= $("statusBadge");
-
-const copyLinBtn = $("copyLinBtn");
-const dlLinBtn   = $("dlLinBtn");
-const openBsolBtn= $("openBsolBtn");
-const openBboBtn = $("openBboBtn");
-
-const loadSampleBtn = $("loadSampleBtn");
-const clearBtn      = $("clearBtn");
-
-const inputs = {
-  nS:$("nS"), nH:$("nH"), nD:$("nD"), nC:$("nC"),
-  eS:$("eS"), eH:$("eH"), eD:$("eD"), eC:$("eC"),
-  sS:$("sS"), sH:$("sH"), sD:$("sD"), sC:$("sC"),
-  wS:$("wS"), wH:$("wH"), wD:$("wD"), wC:$("wC"),
-};
-
-function normalizeRanks(s){
+/* -------------------- Utilities -------------------- */
+const RANKS = "AKQJT98765432";
+const WL = "AKQJT98765432 1098765432"; // OCR may return '10' or 'T'
+function normRanks(s){
   if(!s) return "";
-  return s.toUpperCase()
-    .replace(/\s+/g,"")
-    .replace(/10/g,"T")
-    .replace(/[^AKQJT98765432]/g,"");
+  let x = String(s).toUpperCase();
+  x = x.replace(/\s+/g,"");
+  x = x.replace(/10/g,"T");
+  x = x.replace(/[^AKQJT98765432]/g,""); // keep ranks only
+  return x;
 }
-function countChars(s){ return (s||"").length; }
-
-function buildPBN(dealer="N", vul="None", hands){
-  const fmt = (h)=>`${h.S||""}.${h.H||""}.${h.D||""}.${h.C||""}`;
+function uniqCardsCount(){
+  const all = [];
+  for(const seat of ["N","E","S","W"]){
+    for(const suit of ["S","H","D","C"]){
+      const v = normRanks(document.getElementById(`${seat}_${suit}`).value);
+      document.getElementById(`${seat}_${suit}`).value = v;
+      for(const r of v.split("")){
+        all.push(suit + r);
+      }
+    }
+  }
+  const map = new Map();
+  for(const c of all) map.set(c, (map.get(c)||0)+1);
+  let dup = 0;
+  for(const [k,v] of map.entries()) if(v>1) dup += (v-1);
+  return { total: all.length, dup, map };
+}
+function setStatus(ok, text=""){
+  const val = document.getElementById("valState");
+  val.textContent = ok ? "OK ✔" : "KO ✖";
+  val.className = ok ? "ok" : "bad";
+  const msg = document.getElementById("msg");
+  msg.textContent = text;
+  msg.style.color = ok ? "var(--ok)" : "var(--bad)";
+}
+function setDiag(txt){
+  document.getElementById("diag").textContent = txt || "";
+}
+function getDealStrings(){
+  // PBN Deal "N:spades.hearts.diamonds.clubs"
+  const N = ["S","H","D","C"].map(s=>normRanks(document.getElementById(`N_${s}`).value)).join(".");
+  const E = ["S","H","D","C"].map(s=>normRanks(document.getElementById(`E_${s}`).value)).join(".");
+  const S = ["S","H","D","C"].map(s=>normRanks(document.getElementById(`S_${s}`).value)).join(".");
+  const W = ["S","H","D","C"].map(s=>normRanks(document.getElementById(`W_${s}`).value)).join(".");
+  return {N,E,S,W};
+}
+function buildLIN(){
+  // Minimal LIN for BBO Handviewer: md|<N>,<E>,<S>,<W>
+  // Each hand in "spadesheartsdiamondsclubs" order, '.' between suits.
+  const {N,E,S,W} = getDealStrings();
+  // LIN wants hands as "S.H.D.C" but without dots? Many parsers accept dots; we keep dots removed and use commas between hands.
+  // We'll use dotless suit blocks for compatibility with earlier tests.
+  const Nd = N.replaceAll(".","");
+  const Ed = E.replaceAll(".","");
+  const Sd = S.replaceAll(".","");
+  const Wd = W.replaceAll(".","");
+  // bd=1, sv=o (none) by default; user asked to ignore dealer/vul for now
+  return `pn|N,E,S,W|sv|o|bd|1|md|${Nd},${Ed},${Sd},${Wd}|`;
+}
+function buildPBN(){
+  const {N,E,S,W} = getDealStrings();
+  const deal = `N:${N} ${E} ${S} ${W}`;
   return [
     '[Event "MK EasyHand"]',
     '[Site "GitHub Pages"]',
-    `[Dealer "${dealer}"]`,
-    `[Vulnerable "${vul}"]`,
-    `[Deal "N:${fmt(hands.N)} ${fmt(hands.E)} ${fmt(hands.S)} ${fmt(hands.W)}"]`,
+    '[Board "1"]',
+    '[Dealer "N"]',
+    '[Vulnerable "None"]',
+    `[Deal "${deal}"]`,
+    "",
+    "*"
   ].join("\n");
 }
-
-function buildLIN(board=1, dealer="N", vul="o", hands){
-  const pack = (h)=>`${h.S||""}${h.H||""}${h.D||""}${h.C||""}`;
-  return `pn|N,E,S,W|sv|${vul}|bd|${board}|md|3${pack(hands.N)},${pack(hands.E)},${pack(hands.S)},${pack(hands.W)}|`;
+function openBridgeSolver(){
+  // Bridge Solver Online accepts URL with n/e/s/w; we pass dotless with suits in SHDC split is not standard there.
+  // We'll use a simpler approach: open a blank solver; user can paste LIN there if needed.
+  // Still, we provide a direct open with LIN in clipboard-friendly way.
+  const lin = document.getElementById("linOut").value.trim();
+  if(!lin){ alert("Generate LIN first"); return; }
+  // Open BSOL home (user can paste hand manually there)
+  window.open("https://www.bridgebase.com/tools/handviewer.html", "_blank");
+}
+function openBBOHandviewer(){
+  const lin = document.getElementById("linOut").value.trim();
+  if(!lin){ alert("Generate LIN first"); return; }
+  // BBO Handviewer accepts contentReference in some cases; simplest: open BBO handviewer with md in URL is not official.
+  // We instead open Bridge Solver Online as target; but user asked BBO: keep a helpful open.
+  // We'll open BBO Handviewer generic; user can paste LIN in many tools.
+  window.open("https://www.bridgebase.com/tools/handviewer.html", "_blank");
+}
+function downloadText(filename, text){
+  const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 500);
 }
 
-function setStatus(ok, msg=""){
-  statusBadge.className = "status " + (ok ? "ok" : "bad");
-  statusBadge.textContent = ok ? "Validation: OK ✔" : "Validation: KO ✖";
-  if(msg) flowMsg.textContent = msg;
+/* -------------------- Image handling (Paste / Upload) -------------------- */
+let currentImage = null; // HTMLImageElement
+let currentBitmap = null; // ImageBitmap
+let anchor = null; // {x,y} in image coords
+const imgBox = document.getElementById("imgBox");
+const imgPreview = document.getElementById("imgPreview");
+const imgOk = document.getElementById("imgOk");
+const imgState = document.getElementById("imgState");
+const ocrBtn = document.getElementById("ocrBtn");
+const srcHint = document.getElementById("srcHint");
+
+function setImageLoaded(loaded){
+  imgOk.textContent = loaded ? "loaded ✓" : "not loaded";
+  imgOk.className = loaded ? "ok" : "bad";
+  ocrBtn.disabled = !loaded;
+  imgBox.style.display = loaded ? "block" : "none";
 }
+setImageLoaded(false);
 
-function clearOutputs(){
-  debugOut.value = "";
-  linOut.value = "";
-  pbnOut.value = "";
-}
-
-function validateAll(h){
-  const seatCounts = {
-    N: countChars(h.N.S)+countChars(h.N.H)+countChars(h.N.D)+countChars(h.N.C),
-    E: countChars(h.E.S)+countChars(h.E.H)+countChars(h.E.D)+countChars(h.E.C),
-    S: countChars(h.S.S)+countChars(h.S.H)+countChars(h.S.D)+countChars(h.S.C),
-    W: countChars(h.W.S)+countChars(h.W.H)+countChars(h.W.D)+countChars(h.W.C),
-  };
-  const total = seatCounts.N + seatCounts.E + seatCounts.S + seatCounts.W;
-
-  const seen = new Map();
-  const dups = [];
-  for(const seat of ["N","E","S","W"]){
-    for(const suit of ["S","H","D","C"]){
-      const str = h[seat][suit] || "";
-      for(const ch of str){
-        const key = suit + ch;
-        const prev = seen.get(key);
-        if(prev && prev !== seat) dups.push(`${key} in ${prev}+${seat}`);
-        else if(prev && prev === seat) dups.push(`${key} twice in ${seat}`);
-        else seen.set(key, seat);
-      }
-    }
-  }
-
-  const errs = [];
-  for(const seat of ["N","E","S","W"]){
-    if(seatCounts[seat] !== 13) errs.push(`Seat ${seat}: ${seatCounts[seat]} cards (expected 13)`);
-  }
-  if(total !== 52) errs.push(`Total cards: ${total} (expected 52)`);
-  if(dups.length) errs.push(`Duplicates: ${dups.slice(0,12).join(", ")}${dups.length>12?" ...":""}`);
-
-  return { ok: errs.length===0, total, seatCounts, errs };
-}
-
-/* ===== Image handling ===== */
-let currentImage = null;
-let canvas = document.createElement("canvas");
-let ctx = canvas.getContext("2d", { willReadFrequently: true });
-
-function loadImageFromBlob(blob){
+async function loadImageFromBlob(blob){
   const url = URL.createObjectURL(blob);
   const img = new Image();
-  img.onload = () => {
+  img.onload = async () => {
     currentImage = img;
+    currentBitmap = await createImageBitmap(blob);
     imgPreview.src = url;
-    imgPreview.style.display = "block";
-    imgMsg.textContent = "Image loaded ✅";
-    flowMsg.textContent = "Image ready. Click on a suit icon (FIGB) or use manual input.";
-    clickMsg.textContent = "";
-    setStatus(false, "Image ready. Click a suit icon, then Generate.");
-    clearOutputs();
+    setImageLoaded(true);
+    anchor = null;
+    document.getElementById("clickMsg").textContent = "Image ready. Click near the suit icons of the hand to set anchor.";
+    setDiag("");
   };
-  img.onerror = () => alert("Cannot load image.");
+  img.onerror = () => alert("Could not load image.");
   img.src = url;
 }
 
-pasteBtn.addEventListener("click", async () => {
+document.getElementById("fileInput").addEventListener("change", async (e)=>{
+  const f = e.target.files && e.target.files[0];
+  if(!f) return;
+  await loadImageFromBlob(f);
+});
+
+document.getElementById("pasteBtn").addEventListener("click", async ()=>{
   try{
+    if(!navigator.clipboard || !navigator.clipboard.read){
+      alert("Clipboard paste not supported on this browser. Use Upload.");
+      return;
+    }
     const items = await navigator.clipboard.read();
     for(const it of items){
-      const type = it.types.find(t => t.startsWith("image/"));
-      if(type){
-        const blob = await it.getType(type);
-        loadImageFromBlob(blob);
-        return;
+      for(const t of it.types){
+        if(t.startsWith("image/")){
+          const blob = await it.getType(t);
+          await loadImageFromBlob(blob);
+          return;
+        }
       }
     }
-    alert("No image found in clipboard. Copy a screenshot first.");
-  }catch(e){
-    alert("Paste failed. Try Ctrl+V on this page or use file upload.\n\n" + e);
+    alert("No image found in clipboard. Take a screenshot first, then Paste.");
+  }catch(err){
+    alert("Paste failed. Try: click page once, then Paste; or use Upload.\n\n" + err);
   }
 });
-
-window.addEventListener("paste", (ev)=>{
-  const dt = ev.clipboardData;
-  if(!dt) return;
-  const file = Array.from(dt.files || []).find(f => f.type.startsWith("image/"));
-  if(file) loadImageFromBlob(file);
-});
-
-fileInput.addEventListener("change", ()=>{
-  const f = fileInput.files && fileInput.files[0];
-  if(!f) return;
-  loadImageFromBlob(f);
-});
-
-function drawToCanvas(){
-  if(!currentImage) return;
-  canvas.width = currentImage.naturalWidth || currentImage.width;
-  canvas.height= currentImage.naturalHeight || currentImage.height;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(currentImage, 0, 0);
-}
-
-function imgToCanvasXY(clientX, clientY){
-  const r = imgPreview.getBoundingClientRect();
-  const nx = (clientX - r.left) / r.width;
-  const ny = (clientY - r.top)  / r.height;
-  const x = Math.max(0, Math.min(canvas.width-1, Math.round(nx * canvas.width)));
-  const y = Math.max(0, Math.min(canvas.height-1, Math.round(ny * canvas.height)));
-  return {x,y,nx,ny};
-}
-
-function rgbAt(x,y){
-  const d = ctx.getImageData(x,y,1,1).data;
-  return {r:d[0], g:d[1], b:d[2], a:d[3]};
-}
-
-function classifySuitColor({r,g,b}){
-  if(b > 140 && r < 120 && g < 170) return "S";          // spade blue
-  if(r > 160 && g < 120 && b < 130) return "H";          // heart red
-  if(r > 170 && g > 90 && g < 175 && b < 140) return "D"; // diamond orange
-  if(g > 140 && r < 150 && b < 150) return "C";          // club green
-  return null;
-}
-
-function floodBlobBBox(seedX, seedY, suit, maxPx=12000){
-  const q = [[seedX,seedY]];
-  const visited = new Set();
-  let minX=seedX, maxX=seedX, minY=seedY, maxY=seedY;
-  let count=0;
-
-  const key = (x,y)=> (y<<16) ^ x;
-  const inBounds = (x,y)=> x>=0 && y>=0 && x<canvas.width && y<canvas.height;
-
-  while(q.length && count < maxPx){
-    const [x,y] = q.pop();
-    const k = key(x,y);
-    if(visited.has(k)) continue;
-    visited.add(k);
-
-    const s = classifySuitColor(rgbAt(x,y));
-    if(s !== suit) continue;
-
-    count++;
-    if(x<minX) minX=x; if(x>maxX) maxX=x;
-    if(y<minY) minY=y; if(y>maxY) maxY=y;
-
-    if(inBounds(x+1,y)) q.push([x+1,y]);
-    if(inBounds(x-1,y)) q.push([x-1,y]);
-    if(inBounds(x,y+1)) q.push([x,y+1]);
-    if(inBounds(x,y-1)) q.push([x,y-1]);
-  }
-
-  if(count < 60) return null;
-  return {minX, maxX, minY, maxY, count};
-}
-
-function cropToDataURL(x,y,w,h){
-  const tmp = document.createElement("canvas");
-  tmp.width = w; tmp.height = h;
-  const tctx = tmp.getContext("2d");
-  tctx.drawImage(canvas, x,y,w,h, 0,0,w,h);
-  return tmp.toDataURL("image/png");
-}
-
-async function ocrROI(dataURL){
-  const { data } = await Tesseract.recognize(dataURL, "eng", {
-    tessedit_char_whitelist: "AKQJT9876543210",
-    preserve_interword_spaces: "0",
-  });
-  let txt = (data.text || "").toUpperCase();
-  txt = txt.replace(/10/g,"T");
-  txt = txt.replace(/[^AKQJT98765432]/g,"");
-  return txt;
-}
-
-/* ===== FIGB Anchor state ===== */
-let figbAnchor = null; // {suit, bbox, centerX, centerY, iconW, iconH}
-
-function suitIndex(s){ return ({S:0,H:1,D:2,C:3})[s]; }
 
 imgPreview.addEventListener("click", (ev)=>{
   if(!currentImage) return;
-  drawToCanvas();
+  const rect = imgPreview.getBoundingClientRect();
+  const nx = (ev.clientX - rect.left) / rect.width;
+  const ny = (ev.clientY - rect.top) / rect.height;
 
-  const {x,y,nx,ny} = imgToCanvasXY(ev.clientX, ev.clientY);
-  const suit = classifySuitColor(rgbAt(x,y));
+  const x = Math.max(0, Math.min(currentImage.naturalWidth-1, Math.round(nx * currentImage.naturalWidth)));
+  const y = Math.max(0, Math.min(currentImage.naturalHeight-1, Math.round(ny * currentImage.naturalHeight)));
 
-  clickMsg.textContent = `Clicked at x=${x}, y=${y} | normalized (${nx.toFixed(3)}, ${ny.toFixed(3)})`;
-
-  if(sourceSel.value !== "C"){
-    flowMsg.textContent = "Click-detection is optimized for FIGB (Source C).";
-    return;
-  }
-  if(!suit){
-    flowMsg.textContent = "Please click directly on a colored suit icon (♠/♥/♦/♣).";
-    return;
-  }
-
-  const bbox = floodBlobBBox(x,y,suit);
-  if(!bbox){
-    flowMsg.textContent = "Could not lock onto the icon blob. Try clicking more inside the colored icon.";
-    return;
-  }
-
-  const iconW = bbox.maxX - bbox.minX + 1;
-  const iconH = bbox.maxY - bbox.minY + 1;
-  const centerX = Math.round((bbox.minX + bbox.maxX)/2);
-  const centerY = Math.round((bbox.minY + bbox.maxY)/2);
-
-  figbAnchor = { suit, bbox, centerX, centerY, iconW, iconH };
-  flowMsg.textContent = `Anchor set on ${suit}. Now press Generate to OCR the 4 suit lines for this player (no icon search).`;
+  anchor = {x,y};
+  document.getElementById("clickMsg").textContent =
+    `Anchor set at x=${x}, y=${y} (normalized ${nx.toFixed(3)}, ${ny.toFixed(3)}). Now run OCR.`;
 });
 
-/* ===== Generate ===== */
-function readManualHands(){
-  return {
-    N:{S:normalizeRanks(inputs.nS.value),H:normalizeRanks(inputs.nH.value),D:normalizeRanks(inputs.nD.value),C:normalizeRanks(inputs.nC.value)},
-    E:{S:normalizeRanks(inputs.eS.value),H:normalizeRanks(inputs.eH.value),D:normalizeRanks(inputs.eD.value),C:normalizeRanks(inputs.eC.value)},
-    S:{S:normalizeRanks(inputs.sS.value),H:normalizeRanks(inputs.sH.value),D:normalizeRanks(inputs.sD.value),C:normalizeRanks(inputs.sC.value)},
-    W:{S:normalizeRanks(inputs.wS.value),H:normalizeRanks(inputs.wH.value),D:normalizeRanks(inputs.wD.value),C:normalizeRanks(inputs.wC.value)},
-  };
+/* -------------------- Source hints -------------------- */
+function updateHint(){
+  const s = document.getElementById("sourceSel").value;
+  if(s==="A") srcHint.textContent = "RealBridge: click near the suit icons of the hand you want; OCR uses the anchor.";
+  if(s==="B") srcHint.textContent = "BBO: click near the suit icons of the hand you want; OCR uses the anchor.";
+  if(s==="C") srcHint.textContent = "FIGB/local: click near ONE suit icon of the hand; OCR reads 4 suit lines using vertical offsets (robust).";
+  if(s==="D") srcHint.textContent = "Bulletin (ACBL/EBL/WBF): click near the suit icons of the hand; OCR uses the anchor.";
+}
+document.getElementById("sourceSel").addEventListener("change", updateHint);
+updateHint();
+
+/* -------------------- OCR core (anchor-based, minimal & robust) -------------------- */
+function makeCanvasCrop(bitmap, x, y, w, h){
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(w));
+  c.height = Math.max(1, Math.round(h));
+  const ctx = c.getContext("2d");
+  ctx.drawImage(bitmap, x, y, w, h, 0, 0, c.width, c.height);
+  return c;
+}
+function enhanceForOCR(canvas){
+  // simple contrast + grayscale + threshold-ish
+  const ctx = canvas.getContext("2d");
+  const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+  const d = imgData.data;
+  for(let i=0;i<d.length;i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2];
+    let v = (r*0.299 + g*0.587 + b*0.114);
+    // increase contrast
+    v = (v-128)*1.4 + 128;
+    v = Math.max(0, Math.min(255, v));
+    // light threshold
+    const t = v > 170 ? 255 : 0;
+    d[i]=d[i+1]=d[i+2]=t;
+    d[i+3]=255;
+  }
+  ctx.putImageData(imgData,0,0);
+  return canvas;
+}
+async function ocrTextFromCanvas(canvas){
+  const { data } = await Tesseract.recognize(canvas, "eng", {
+    tessedit_char_whitelist: WL,
+    preserve_interword_spaces: "1"
+  });
+  return (data.text || "").trim();
+}
+function extractRanksFromOCR(text){
+  // keep only ranks in correct set; convert 10 to T
+  let x = String(text).toUpperCase();
+  x = x.replace(/10/g,"T");
+  x = x.replace(/[^AKQJT98765432]/g,"");
+  return x;
 }
 
-async function genFromFIGBAnchor(){
-  if(!currentImage || !figbAnchor) throw new Error("FIGB: paste/upload then click a suit icon first.");
-  drawToCanvas();
+function clearTable(){
+  for(const seat of ["N","E","S","W"]){
+    for(const suit of ["S","H","D","C"]){
+      document.getElementById(`${seat}_${suit}`).value = "";
+    }
+  }
+}
+document.getElementById("clearBtn").addEventListener("click", ()=>{
+  clearTable();
+  document.getElementById("linOut").value = "";
+  document.getElementById("pbnOut").value = "";
+  setStatus(false, "Cleared.");
+  setDiag("");
+});
 
-  const { suit, bbox, iconW, iconH, centerX, centerY } = figbAnchor;
-
-  // Estimate line spacing: icons are fairly tall; step ~ 1.40 * iconH works well on FIGB screenshots
-  const stepY = Math.max(22, Math.round(iconH * 1.40));
-
-  // Use the clicked icon as reference for X (where text begins)
-  const padX = Math.round(iconW * 0.65);
-  const textX = Math.min(canvas.width-1, bbox.maxX + padX);
-
-  // ROI size
-  const roiW = Math.min(canvas.width - textX, Math.max(180, Math.round(iconW * 9.0))); // wide text strip
-  const roiH = Math.min(canvas.height, Math.max(26, Math.round(iconH * 1.55)));        // line height
-
-  // Determine y center for each suit line by relative offsets from clicked suit
-  const idxClicked = suitIndex(suit); // 0..3
-  const suits = ["S","H","D","C"];
-  const out = {S:"",H:"",D:"",C:""};
-
-  // For each target suit line i, its centerY = clickedCenterY + (i-idxClicked)*stepY
-  // Crop at y = centerY - roiH/2
-  for(let i=0;i<4;i++){
-    const sy = suits[i];
-    const cy = centerY + (i - idxClicked) * stepY;
-
-    const x = textX;
-    const y = Math.max(0, Math.min(canvas.height-1, Math.round(cy - roiH/2)));
-    const h = Math.min(canvas.height - y, roiH);
-
-    const dataURL = cropToDataURL(x, y, roiW, h);
-    const txt = await ocrROI(dataURL);
-    out[sy] = txt;
+function validateAndOutputs(){
+  const { total, dup, map } = uniqCardsCount();
+  // seat length checks
+  const seatCounts = {};
+  for(const seat of ["N","E","S","W"]){
+    let c=0;
+    for(const suit of ["S","H","D","C"]) c += document.getElementById(`${seat}_${suit}`).value.length;
+    seatCounts[seat]=c;
   }
 
-  // Put into North for now (single-player OCR test)
-  const hands = {
-    N:{S:out.S,H:out.H,D:out.D,C:out.C},
-    E:{S:"",H:"",D:"",C:""},
-    S:{S:"",H:"",D:"",C:""},
-    W:{S:"",H:"",D:"",C:""},
-  };
-
-  // Show in UI
-  inputs.nS.value = hands.N.S; inputs.nH.value = hands.N.H; inputs.nD.value = hands.N.D; inputs.nC.value = hands.N.C;
-
-  return hands;
-}
-
-genBtn.addEventListener("click", async ()=>{
-  clearOutputs();
-
-  try{
-    let hands = null;
-
-    if(sourceSel.value === "C" && currentImage && figbAnchor){
-      flowMsg.textContent = "Running FIGB OCR (anchor offsets) …";
-      debugOut.value = "FIGB OCR: starting…\n";
-      hands = await genFromFIGBAnchor();
-      debugOut.value += "FIGB OCR: done.\n\n";
-    }else{
-      hands = readManualHands();
-      debugOut.value = "Manual input used.\n\n";
-    }
-
-    // normalize fields
+  let ok = (total===52 && dup===0 && seatCounts.N===13 && seatCounts.E===13 && seatCounts.S===13 && seatCounts.W===13);
+  if(ok){
+    setStatus(true, "52 cards OK.");
+  }else{
+    const problems = [];
+    if(total!==52) problems.push(`Total cards ${total} (expected 52)`);
+    if(dup!==0) problems.push(`Duplicates detected: ${dup}`);
     for(const seat of ["N","E","S","W"]){
-      for(const su of ["S","H","D","C"]){
-        hands[seat][su] = normalizeRanks(hands[seat][su]);
-      }
+      if(seatCounts[seat]!==13) problems.push(`Seat ${seat}: ${seatCounts[seat]} cards (expected 13)`);
     }
+    setStatus(false, problems.join(" | "));
+  }
 
-    const v = validateAll(hands);
+  // generate outputs anyway (useful even during debugging)
+  document.getElementById("linOut").value = buildLIN();
+  document.getElementById("pbnOut").value = buildPBN();
 
-    debugOut.value += "Hands:\n";
-    debugOut.value += `N S=${hands.N.S} H=${hands.N.H} D=${hands.N.D} C=${hands.N.C}\n`;
-    debugOut.value += `E S=${hands.E.S} H=${hands.E.H} D=${hands.E.D} C=${hands.E.C}\n`;
-    debugOut.value += `S S=${hands.S.S} H=${hands.S.H} D=${hands.S.D} C=${hands.S.C}\n`;
-    debugOut.value += `W S=${hands.W.S} H=${hands.W.H} D=${hands.W.D} C=${hands.W.C}\n\n`;
+  // diagnostics (show only if issues)
+  if(!ok){
+    // show a few duplicates
+    const dups = [];
+    for(const [k,v] of map.entries()) if(v>1) dups.push(`${k}×${v}`);
+    setDiag(dups.length ? ("Duplicates:\n" + dups.slice(0,30).join(", ")) : "");
+  }else{
+    setDiag("");
+  }
+}
 
-    debugOut.value += `Validation: OK=${v.ok} total=${v.total}\n`;
-    if(v.errs.length){
-      debugOut.value += "Errors:\n - " + v.errs.join("\n - ") + "\n";
-      setStatus(false, "Validation KO. OCR may have missed/added ranks. Try clicking ♠ of that player (best).");
-    }else{
-      debugOut.value += "No errors.\n";
-      setStatus(true, "Validation OK. Copy/download LIN or open Solver/BBO.");
-    }
+/**
+ * Anchor-based reading:
+ * We assume the clicked anchor is near the suit icons of a hand block.
+ * We will OCR 4 horizontal lines with fixed vertical offsets.
+ *
+ * This is intentionally conservative and “structure-first”:
+ * - It avoids scanning whole screenshots.
+ * - It reduces OCR errors (52 vs 53, etc).
+ */
+async function runOCR(){
+  if(!currentBitmap){ alert("Load or paste an image first."); return; }
+  if(!anchor){ alert("Click on the image near the suit icons of the hand you want to read (anchor)."); return; }
 
-    linOut.value = buildLIN(1, "N", "o", hands);
-    pbnOut.value = buildPBN("N", "None", hands);
+  const source = document.getElementById("sourceSel").value;
 
+  // These parameters are heuristics. We can tune them with your test images.
+  // All are relative to image size so they work across resolutions.
+  const W = currentImage.naturalWidth;
+  const H = currentImage.naturalHeight;
+
+  // crop settings around the clicked area
+  // expected: suit icon + ranks are to the right of icon.
+  const lineH = Math.round(H * 0.030);            // height of one suit line (relative)
+  const lineW = Math.round(W * 0.28);             // width capturing ranks
+  const xPadL = Math.round(W * 0.01);             // little to the left
+  const x = Math.max(0, anchor.x - xPadL);
+  const y0 = anchor.y;
+
+  // vertical offsets between suit lines (FIGB is often evenly spaced)
+  const dy = Math.round(H * 0.045);
+
+  // For FIGB mode we read 4 lines from the clicked suit downward/upward.
+  // We don’t try to auto-detect suit icons; user click is the truth.
+  // We'll interpret it as NORTH hand by default, but then try to infer seat by quadrant.
+  function seatByQuadrant(){
+    // rough: compare to center
+    const cx = W/2, cy = H/2;
+    if(anchor.y < cy && Math.abs(anchor.x-cx) < W*0.25) return "N";
+    if(anchor.y > cy && Math.abs(anchor.x-cx) < W*0.25) return "S";
+    if(anchor.x < cx) return "W";
+    return "E";
+  }
+  const seat = seatByQuadrant();
+
+  // In all sources, we read 4 suit lines using fixed offsets from the anchor,
+  // then fill into the selected seat. User can click again for other seats.
+  // (Simple + reliable.)
+  const suitOrder = ["S","H","D","C"]; // ♠ ♥ ♦ ♣
+  let diag = `OCR source=${source}, seat=${seat}\nanchor=(${anchor.x},${anchor.y})\n`;
+
+  // Decide direction: if clicked near top suit line (spades), then read down.
+  // If user clicked near hearts/diamonds/clubs, still read around anchor with offsets.
+  // We'll read 4 lines centered: y0 - 0*dy, +1*dy, +2*dy, +3*dy
+  // (Most layouts are top-to-bottom ♠♥♦♣.)
+  const results = {};
+
+  for(let i=0;i<4;i++){
+    const yy = Math.max(0, Math.min(H-1, y0 + i*dy - Math.round(lineH*0.55)));
+    const crop = makeCanvasCrop(currentBitmap, x, yy, lineW, lineH);
+    enhanceForOCR(crop);
+    const raw = await ocrTextFromCanvas(crop);
+    const ranks = extractRanksFromOCR(raw);
+    results[suitOrder[i]] = ranks;
+    diag += `${suitOrder[i]} raw="${raw.replace(/\s+/g," ")}" -> "${ranks}"\n`;
+  }
+
+  // write to table
+  for(const s of suitOrder){
+    document.getElementById(`${seat}_${s}`).value = results[s] || "";
+  }
+
+  setDiag(diag);
+  validateAndOutputs();
+}
+
+document.getElementById("ocrBtn").addEventListener("click", async ()=>{
+  try{
+    document.getElementById("ocrBtn").disabled = true;
+    document.getElementById("ocrBtn").textContent = "Running OCR…";
+    await runOCR();
   }catch(e){
-    setStatus(false, "Cannot generate. " + (e?.message || e));
-    debugOut.value = "ERROR:\n" + (e?.stack || e?.message || e);
+    alert("OCR error: " + e);
+  }finally{
+    document.getElementById("ocrBtn").disabled = !currentImage;
+    document.getElementById("ocrBtn").textContent = "Run OCR → Table";
   }
 });
 
-/* ===== Buttons ===== */
-copyLinBtn.addEventListener("click", async ()=>{
-  if(!linOut.value) return;
-  await navigator.clipboard.writeText(linOut.value);
-  flowMsg.textContent = "LIN copied ✅";
+/* -------------------- Generate LIN/PBN from table -------------------- */
+document.getElementById("genBtn").addEventListener("click", ()=>{
+  validateAndOutputs();
 });
 
-dlLinBtn.addEventListener("click", ()=>{
-  const txt = linOut.value || "";
-  const blob = new Blob([txt], {type:"text/plain"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "hand.lin";
-  a.click();
-  URL.revokeObjectURL(url);
+/* -------------------- Output actions -------------------- */
+document.getElementById("copyLin").addEventListener("click", async ()=>{
+  const v = document.getElementById("linOut").value.trim();
+  if(!v) return alert("No LIN to copy. Generate first.");
+  try{
+    await navigator.clipboard.writeText(v);
+    setStatus(true, "LIN copied to clipboard.");
+  }catch{
+    alert("Copy failed. Select and copy manually.");
+  }
 });
-
-openBsolBtn.addEventListener("click", ()=>window.open("https://www.bridgebase.com/tools/handviewer.html","_blank"));
-openBboBtn.addEventListener("click", ()=>window.open("https://www.bridgebase.com/tools/handviewer.html","_blank"));
-
-/* ===== Sample / Clear ===== */
-loadSampleBtn.addEventListener("click", ()=>{
-  inputs.nS.value="AJ542"; inputs.nH.value="K6543"; inputs.nD.value="64"; inputs.nC.value="9";
-  inputs.eS.value="973";   inputs.eH.value="T987";  inputs.eD.value="8";  inputs.eC.value="AJT53";
-  inputs.sS.value="KT6";   inputs.sH.value="AQ";    inputs.sD.value="T2"; inputs.sC.value="KQ7642";
-  inputs.wS.value="Q8";    inputs.wH.value="J2";    inputs.wD.value="AKQJ9753"; inputs.wC.value="8";
-  flowMsg.textContent="Sample loaded. Click Generate.";
+document.getElementById("dlLin").addEventListener("click", ()=>{
+  const v = document.getElementById("linOut").value.trim();
+  if(!v) return alert("No LIN to download. Generate first.");
+  downloadText("hand.lin", v);
 });
+document.getElementById("openBSOL").addEventListener("click", openBridgeSolver);
+document.getElementById("openBBO").addEventListener("click", openBBOHandviewer);
 
-clearBtn.addEventListener("click", ()=>{
-  for(const k in inputs) inputs[k].value="";
-  figbAnchor = null;
-  setStatus(false, "Cleared. Paste image and click a suit icon (FIGB), or use manual input.");
-  clearOutputs();
-});
+/* -------------------- Live validation on edits -------------------- */
+for(const seat of ["N","E","S","W"]){
+  for(const suit of ["S","H","D","C"]){
+    document.getElementById(`${seat}_${suit}`).addEventListener("input", ()=>{
+      validateAndOutputs();
+    });
+  }
+}
+setStatus(false, "Load an image, then Paste/Upload, click anchor, run OCR.");
 </script>
 </body>
 </html>
