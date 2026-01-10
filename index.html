@@ -1,175 +1,379 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MK-EasyHand-App</title>
+<title>MK EasyHand – Bridge → LIN / PBN</title>
+
 <style>
-  :root{--bg:#f4f4f4;--card:#fff;--muted:#666;--ok:#0a7a2f;--bad:#b00020;--blue:#1976d2}
-  body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;padding:14px}
-  h1{font-size:20px;margin:0 0 6px}
-  .muted{color:var(--muted);font-size:13px;line-height:1.35}
-  .box{background:var(--card);border-radius:12px;padding:12px;margin:12px 0}
-  .sources{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-  .srcRow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;border:1px solid #e8e8e8;border-radius:12px;padding:10px}
-  .srcTag{font-weight:bold;min-width:22px}
-  .srcName{flex:1}
-  button{padding:10px 12px;border:0;border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;font-size:14px}
+  :root{--bg:#f2f2f2;--card:#fff;--muted:#666;--ok:#0a7a2f;--bad:#b00020;--blue:#1976d2}
+  body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;padding:18px}
+  h1{margin:0 0 12px 0}
+  .box{background:var(--card);border-radius:12px;padding:14px;margin-bottom:14px}
+  .small{color:var(--muted);font-size:13px;line-height:1.35}
+  .topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .pill{padding:6px 10px;border-radius:999px;background:#eef3ff;color:#234}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+  .seat{border:1px solid #e6e6e6;border-radius:12px;padding:12px}
+  .seat h3{margin:0 0 10px 0}
+  .row{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .suit{width:22px;font-weight:bold}
+  input{flex:1;padding:10px;border-radius:10px;border:1px solid #ccc;font-size:14px}
+  textarea{width:100%;height:120px;font-family:ui-monospace,Consolas,monospace;font-size:13px;border-radius:10px;border:1px solid #ccc;padding:10px;box-sizing:border-box}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  button{padding:10px 14px;border:0;border-radius:10px;color:#fff;background:var(--blue);cursor:pointer;font-size:14px}
   button.gray{background:#666}
+  button.red{background:var(--bad)}
+  button.green{background:var(--ok)}
   button:disabled{opacity:.45;cursor:not-allowed}
-  #imgPreview{max-width:100%;border:1px solid #ddd;border-radius:10px;margin-top:10px;display:none}
-  .statusLine{margin-top:8px}
-  .ok{color:var(--ok);font-weight:bold}
-  .bad{color:var(--bad);font-weight:bold}
-  input[type="file"]{font-size:14px}
-  .pill{display:inline-block;padding:3px 8px;border-radius:999px;background:#eef3ff;color:#234;font-size:12px}
+  #status{font-weight:bold}
+  .ok{color:var(--ok)}
+  .bad{color:var(--bad)}
+  #debug{white-space:pre-wrap;background:#f7f7f7;border-radius:10px;padding:10px;border:1px solid #eee;font-size:12px;margin-top:10px}
+  select{padding:8px 10px;border-radius:10px;border:1px solid #ccc}
+  .mini{width:90px}
 </style>
 </head>
 
 <body>
-<h1>MK-EasyHand-App</h1>
-<div class="muted">
-  Screenshot → Estrai mano → Apri Bridge Solver / BBO.<br>
-  Suggerimento: fai lo screenshot e poi usa <b>Incolla</b> (immagine negli appunti).
+
+<h1>MK EasyHand – Bridge → LIN / PBN</h1>
+
+<div class="box">
+  <div class="topbar">
+    <span class="pill"><b>1 board</b> → Validate → LIN/PBN → Open BSOL/BBO</span>
+
+    <label for="shotType" class="small"><b>Source:</b></label>
+    <select id="shotType" title="Screenshot source">
+      <option value="A">A – RealBridge</option>
+      <option value="B">B – BBO</option>
+      <option value="C">C – Other</option>
+    </select>
+
+    <label for="boardNo" class="small"><b>Board:</b></label>
+    <input id="boardNo" class="mini" inputmode="numeric" value="1" />
+
+    <label for="dealer" class="small"><b>Dealer:</b></label>
+    <select id="dealer">
+      <option value="N">N</option>
+      <option value="E">E</option>
+      <option value="S">S</option>
+      <option value="W">W</option>
+    </select>
+
+    <label for="vul" class="small"><b>Vul:</b></label>
+    <select id="vul">
+      <option value="None">None</option>
+      <option value="NS">NS</option>
+      <option value="EW">EW</option>
+      <option value="All">All</option>
+    </select>
+
+    <span class="small">Use <b>10</b> or <b>T</b>. The app normalizes and checks missing/duplicate cards.</span>
+  </div>
+
+  <div class="small" style="margin-top:8px"><b>Hint:</b> <span id="shotHint"></span></div>
+
+  <div class="actions" style="margin-top:12px">
+    <button class="gray" id="btnExample" type="button">Load sample</button>
+    <button class="red" id="btnClear" type="button">Clear</button>
+    <button class="green" id="btnGen" type="button">Generate LIN / PBN (validate)</button>
+    <span id="status" class="bad">Validation: KO</span>
+  </div>
+
+  <div id="debug">DEBUG: ready.</div>
+</div>
+
+<div class="grid">
+  <div class="seat">
+    <h3>NORTH</h3>
+    <div class="row"><div class="suit">♠</div><input id="nS" placeholder="AJ542"></div>
+    <div class="row"><div class="suit">♥</div><input id="nH" placeholder="K6543"></div>
+    <div class="row"><div class="suit">♦</div><input id="nD" placeholder="64"></div>
+    <div class="row"><div class="suit">♣</div><input id="nC" placeholder="9"></div>
+  </div>
+
+  <div class="seat">
+    <h3>EAST</h3>
+    <div class="row"><div class="suit">♠</div><input id="eS" placeholder="973"></div>
+    <div class="row"><div class="suit">♥</div><input id="eH" placeholder="10987"></div>
+    <div class="row"><div class="suit">♦</div><input id="eD" placeholder="8"></div>
+    <div class="row"><div class="suit">♣</div><input id="eC" placeholder="AJ1053"></div>
+  </div>
+
+  <div class="seat">
+    <h3>SOUTH</h3>
+    <div class="row"><div class="suit">♠</div><input id="sS" placeholder="K106"></div>
+    <div class="row"><div class="suit">♥</div><input id="sH" placeholder="AQ"></div>
+    <div class="row"><div class="suit">♦</div><input id="sD" placeholder="102"></div>
+    <div class="row"><div class="suit">♣</div><input id="sC" placeholder="KQ7642"></div>
+  </div>
+
+  <div class="seat">
+    <h3>WEST</h3>
+    <div class="row"><div class="suit">♠</div><input id="wS" placeholder="Q8"></div>
+    <div class="row"><div class="suit">♥</div><input id="wH" placeholder="J2"></div>
+    <div class="row"><div class="suit">♦</div><input id="wD" placeholder="AKQJ9753"></div>
+    <div class="row"><div class="suit">♣</div><input id="wC" placeholder="8"></div>
+  </div>
 </div>
 
 <div class="box">
-  <div class="muted"><span class="pill">Metodo veloce</span> Seleziona la sorgente e premi <b>Incolla</b>.</div>
-
-  <div class="sources">
-    <div class="srcRow">
-      <div class="srcTag">A</div>
-      <div class="srcName">RealBridge</div>
-      <button type="button" class="pasteBtn" data-source="A">📋 Incolla</button>
-    </div>
-
-    <div class="srcRow">
-      <div class="srcTag">B</div>
-      <div class="srcName">BBO</div>
-      <button type="button" class="pasteBtn" data-source="B">📋 Incolla</button>
-    </div>
-
-    <div class="srcRow">
-      <div class="srcTag">C</div>
-      <div class="srcName">Federation / Local software (es. MY FIGB)</div>
-      <button type="button" class="pasteBtn" data-source="C">📋 Incolla</button>
-    </div>
-
-    <div class="srcRow">
-      <div class="srcTag">D</div>
-      <div class="srcName">LoveBridge (WBF)</div>
-      <button type="button" class="pasteBtn" data-source="D">📋 Incolla</button>
-    </div>
-
-    <div class="srcRow">
-      <div class="srcTag">E</div>
-      <div class="srcName">Bulletin diagram (ACBL / EBL / WBF)</div>
-      <button type="button" class="pasteBtn" data-source="E">📋 Incolla</button>
-    </div>
+  <b>Output LIN</b>
+  <textarea id="outLIN" readonly></textarea>
+  <div class="actions">
+    <button class="gray" id="btnCopyLin" type="button">Copy LIN</button>
+    <button id="btnDlLin" type="button">Download .lin</button>
+    <button id="btnOpenBSOL" type="button" disabled>Open in Bridge Solver Online</button>
+    <button id="btnOpenBBO" type="button" disabled>Open in BBO Handviewer</button>
   </div>
-
-  <div class="statusLine muted" style="margin-top:12px">
-    <b>Oppure</b> carica il file manualmente:
-    <input type="file" id="fileInput" accept="image/*" />
-    <button type="button" id="useFileBtn" class="gray">Usa questo file</button>
+  <div class="small">
+    Note: links open in a new tab. If pop-ups are blocked, allow new tabs for this site.
   </div>
-
-  <div id="pasteStatus" class="muted statusLine"></div>
-
-  <img id="imgPreview" alt="Preview screenshot" />
 </div>
 
 <div class="box">
-  <div><b>Stato</b></div>
-  <div id="state" class="muted">In attesa di immagine…</div>
-  <div id="chosen" class="muted" style="margin-top:6px"></div>
+  <b>Output PBN</b>
+  <textarea id="outPBN" readonly></textarea>
 </div>
 
 <script>
-  const pasteStatus = document.getElementById("pasteStatus");
-  const imgPreview = document.getElementById("imgPreview");
-  const state = document.getElementById("state");
-  const chosen = document.getElementById("chosen");
-  const fileInput = document.getElementById("fileInput");
-  const useFileBtn = document.getElementById("useFileBtn");
-  const pasteBtns = document.querySelectorAll(".pasteBtn");
+  const $ = (id) => document.getElementById(id);
 
-  let currentSource = null;   // "A".."E"
-  let currentBlob = null;     // screenshot blob
-
-  function showStatusOK(msg){
-    pasteStatus.innerHTML = `<span class="ok">✅ ${msg}</span>`;
-  }
-  function showStatusBad(msg){
-    pasteStatus.innerHTML = `<span class="bad">❌ ${msg}</span>`;
+  // --- Source hints
+  function updateShotHint(){
+    const v = $("shotType").value;
+    const hints = {
+      A: "RealBridge: usually clearer layout; board/dealer/vul are often top-left.",
+      B: "BBO: more compact layout; watch out for 10/T and tiny suit symbols.",
+      C: "Other federation software: manual input now; later we add presets + OCR templates."
+    };
+    $("shotHint").textContent = hints[v] || "";
   }
 
-  function setCurrent(source){
-    currentSource = source;
-    chosen.textContent = source ? `Sorgente selezionata: ${source}` : "";
+  // 10 -> T, keep only ranks
+  function normRanks(t){
+    return (t||"")
+      .toUpperCase()
+      .replace(/10/g,"T")
+      .replace(/[^AKQJT98765432]/g,"");
   }
 
-  function handleImageBlob(blob, how){
-    if(!blob){
-      showStatusBad("Nessuna immagine.");
-      return;
-    }
-    currentBlob = blob;
-    const url = URL.createObjectURL(blob);
-    imgPreview.src = url;
-    imgPreview.style.display = "block";
-    state.innerHTML = `Immagine caricata. <b>Pronta</b> per estrazione mano (fase successiva).`;
-    showStatusOK(`Immagine acquisita (${how}).`);
+  function readHands(){
+    return {
+      N:{S:normRanks($("nS").value),H:normRanks($("nH").value),D:normRanks($("nD").value),C:normRanks($("nC").value)},
+      E:{S:normRanks($("eS").value),H:normRanks($("eH").value),D:normRanks($("eD").value),C:normRanks($("eC").value)},
+      S:{S:normRanks($("sS").value),H:normRanks($("sH").value),D:normRanks($("sD").value),C:normRanks($("sC").value)},
+      W:{S:normRanks($("wS").value),H:normRanks($("wH").value),D:normRanks($("wD").value),C:normRanks($("wC").value)}
+    };
   }
 
-  async function pasteFromClipboard(){
-    if (!navigator.clipboard || !navigator.clipboard.read) {
-      showStatusBad("Funzione Incolla non supportata qui. Usa ‘Carica file’. (Serve HTTPS e browser moderno)");
-      return null;
-    }
-    const items = await navigator.clipboard.read();
-    for (const item of items) {
-      const imgType = item.types.find(t => t.startsWith("image/"));
-      if (imgType) {
-        return await item.getType(imgType);
-      }
-    }
-    return null;
-  }
+  function validate52(h){
+    const seen = new Set();
+    const errors = [];
+    const seats = ["N","E","S","W"];
+    const suits = ["S","H","D","C"];
+    let tot = 0;
 
-  pasteBtns.forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const src = btn.getAttribute("data-source");
-      setCurrent(src);
-      pasteStatus.textContent = "Leggo dagli appunti…";
-      try{
-        const blob = await pasteFromClipboard();
-        if(!blob){
-          showStatusBad("Negli appunti non c’è un’immagine. Fai prima uno screenshot e riprova.");
-          return;
+    for (const p of seats){
+      let cnt = 0;
+      for (const s of suits){
+        for (const r of h[p][s]){
+          tot++; cnt++;
+          const k = s + r;
+          if (seen.has(k)) errors.push("Duplicate: " + k);
+          seen.add(k);
         }
-        handleImageBlob(blob, `Incolla (${src})`);
-      }catch(err){
-        console.error(err);
-        showStatusBad("Impossibile leggere gli appunti (permessi/HTTPS). Usa ‘Carica file’.");
       }
-    });
-  });
-
-  // Fallback: file picker
-  useFileBtn.addEventListener("click", () => {
-    const f = fileInput.files && fileInput.files[0];
-    if(!f){
-      showStatusBad("Seleziona prima un file immagine.");
-      return;
+      if (cnt !== 13) errors.push(`Seat ${p}: ${cnt} cards (expected 13)`);
     }
-    // se l'utente non ha scelto una source, mettiamo C (Other) come default ragionevole
-    if(!currentSource) setCurrent("C");
-    handleImageBlob(f, "Carica file");
-  });
+    if (tot !== 52) errors.push(`Total cards: ${tot} (expected 52)`);
+    return { ok: errors.length===0, tot, errors };
+  }
+
+  function setStatus(ok){
+    $("status").className = ok ? "ok" : "bad";
+    $("status").textContent = ok ? "Validation: OK ✅" : "Validation: KO";
+    $("btnOpenBSOL").disabled = !ok;
+    $("btnOpenBBO").disabled = !ok;
+  }
+
+  function boardNumber(){
+    const raw = ($("boardNo").value || "").trim();
+    const n = parseInt(raw, 10);
+    return (Number.isFinite(n) && n > 0) ? n : 1;
+  }
+
+  function dealerVal(){ return $("dealer").value || "N"; }
+  function vulVal(){ return $("vul").value || "None"; }
+
+  // Map Vulnerability to LIN 'sv' code: o/ n/ e/ b
+  function vulToLinSv(v){
+    if (v === "NS") return "n";
+    if (v === "EW") return "e";
+    if (v === "All") return "b";
+    return "o"; // None
+  }
+
+  // BSOL seat string S.H.D.C
+  function seatDots(seat){ return `${seat.S||"-"}.${seat.H||"-"}.${seat.D||"-"}.${seat.C||"-"}`; }
+  // Handviewer seat string s..h..d..c.. (lowercase)
+  function seatHV(seat){ return (`s${seat.S}h${seat.H}d${seat.D}c${seat.C}`).toLowerCase(); }
+
+  function buildOutputs(h){
+    const b = boardNumber();
+    const d = dealerVal();
+    const v = vulVal();
+
+    const n = seatDots(h.N);
+    const e = seatDots(h.E);
+    const s = seatDots(h.S);
+    const w = seatDots(h.W);
+
+    $("outPBN").value =
+`[Board "${b}"]
+[Dealer "${d}"]
+[Vulnerable "${v}"]
+[Deal "N:${n} ${e} ${s} ${w}"]`;
+
+    // LIN minimal deal: order N,W,E,S (works well with your flow)
+    const md = `${h.N.S}${h.N.H}${h.N.D}${h.N.C},${h.W.S}${h.W.H}${h.W.D}${h.W.C},${h.E.S}${h.E.H}${h.E.D}${h.E.C},${h.S.S}${h.S.H}${h.S.D}${h.S.C}`;
+    const sv = vulToLinSv(v);
+    const dealerCode = ({N:3,E:4,S:1,W:2}[d] || 3); // LIN md|<dealerCode>...
+
+    $("outLIN").value = `pn|N,E,S,W|sv|${sv}|bd|${b}|md|${dealerCode}${md}|`;
+  }
+
+  function buildBSOLUrl(h){
+    const base = "https://dds.bridgewebs.com/bsol2/ddummy.htm";
+    const b = boardNumber();
+    const d = dealerVal();
+    const v = vulVal();
+
+    const params = new URLSearchParams({
+      board: String(b),
+      dealer: d,
+      vul: v,
+      north: seatDots(h.N),
+      east:  seatDots(h.E),
+      south: seatDots(h.S),
+      west:  seatDots(h.W),
+      analyse: "true"
+    });
+    return `${base}?${params.toString()}`;
+  }
+
+  // BBO Handviewer 'v' codes: '-' none, 'n' NS, 'e' EW, 'b' all
+  function vulToBboV(v){
+    if (v === "NS") return "n";
+    if (v === "EW") return "e";
+    if (v === "All") return "b";
+    return "-";
+  }
+
+  function buildBBOUrl(h){
+    const base = "https://www.bridgebase.com/tools/handviewer.html";
+    const b = boardNumber();
+    const d = dealerVal();
+    const v = vulToBboV(vulVal());
+
+    const params = new URLSearchParams({
+      b: String(b),
+      d: d.toLowerCase(),
+      v: v,
+      n: seatHV(h.N),
+      e: seatHV(h.E),
+      s: seatHV(h.S),
+      w: seatHV(h.W)
+    });
+    return `${base}?${params.toString()}`;
+  }
+
+  function debugDump(h, vld){
+    $("debug").textContent =
+`DEBUG:
+Source=${$("shotType").value}
+Board=${boardNumber()}  Dealer=${dealerVal()}  Vul=${vulVal()}
+
+N S=${h.N.S} H=${h.N.H} D=${h.N.D} C=${h.N.C}
+E S=${h.E.S} H=${h.E.H} D=${h.E.D} C=${h.E.C}
+S S=${h.S.S} H=${h.S.H} D=${h.S.D} C=${h.S.C}
+W S=${h.W.S} H=${h.W.H} D=${h.W.D} C=${h.W.C}
+
+Validation: OK=${vld.ok}  total=${vld.tot}
+${vld.errors.length ? ("Errors:\n- " + vld.errors.join("\n- ")) : "No errors."}`;
+  }
+
+  // UI actions
+  $("btnExample").onclick = () => {
+    $("boardNo").value = "1";
+    $("dealer").value = "N";
+    $("vul").value = "None";
+
+    $("nS").value="AJ542"; $("nH").value="K6543"; $("nD").value="64"; $("nC").value="9";
+    $("eS").value="973";   $("eH").value="10987"; $("eD").value="8";  $("eC").value="AJ1053";
+    $("sS").value="K106";  $("sH").value="AQ";    $("sD").value="102";$("sC").value="KQ7642";
+    $("wS").value="Q8";    $("wH").value="J2";    $("wD").value="AKQJ9753"; $("wC").value="8";
+  };
+
+  $("btnClear").onclick = () => {
+    for (const id of ["nS","nH","nD","nC","eS","eH","eD","eC","sS","sH","sD","sC","wS","wH","wD","wC"]) $(id).value="";
+    $("outLIN").value=""; $("outPBN").value="";
+    $("debug").textContent="DEBUG: cleared.";
+    setStatus(false);
+  };
+
+  $("btnGen").onclick = () => {
+    document.activeElement && document.activeElement.blur();
+    setTimeout(() => {
+      const h = readHands();
+      const vld = validate52(h);
+      debugDump(h, vld);
+      setStatus(vld.ok);
+      if (!vld.ok){
+        $("outLIN").value = "";
+        $("outPBN").value = "";
+        return;
+      }
+      buildOutputs(h);
+    }, 0);
+  };
+
+  $("btnCopyLin").onclick = async () => {
+    const t = $("outLIN").value || "";
+    if (!t.trim()) return;
+    await navigator.clipboard.writeText(t);
+  };
+
+  $("btnDlLin").onclick = () => {
+    const t = $("outLIN").value || "";
+    if (!t.trim()) return;
+    const blob = new Blob([t + "\n"], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `board${boardNumber()}.lin`;
+    a.click();
+  };
+
+  $("btnOpenBSOL").onclick = () => {
+    const h = readHands();
+    const vld = validate52(h);
+    if (!vld.ok) return;
+    window.open(buildBSOLUrl(h), "_blank", "noopener,noreferrer");
+  };
+
+  $("btnOpenBBO").onclick = () => {
+    const h = readHands();
+    const vld = validate52(h);
+    if (!vld.ok) return;
+    window.open(buildBBOUrl(h), "_blank", "noopener,noreferrer");
+  };
 
   // init
-  setCurrent(null);
+  $("shotType").addEventListener("change", updateShotHint);
+  updateShotHint();
+  setStatus(false);
 </script>
 
 </body>
