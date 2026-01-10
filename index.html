@@ -1,932 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>MK EasyHand – Screenshot → Crop → Seat → LIN/PBN (v1E)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<title>MK EasyHand App – Paste & Click</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-  body{font-family:Arial,Helvetica,sans-serif;background:#f4f4f4;margin:0;padding:14px}
-  h1{margin:0 0 6px;font-size:22px}
-  .small{font-size:13px;color:#666;line-height:1.35}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-  .panel{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px}
-  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-  button{padding:8px 12px;font-size:14px;border-radius:8px;border:0;cursor:pointer;background:#1976d2;color:#fff}
-  button.gray{background:#666}
-  button.red{background:#b00020}
-  button.green{background:#1b7f2a}
-  button.light{background:#e9e9e9;color:#222;border:1px solid #ddd}
-  button:disabled{opacity:.55;cursor:not-allowed}
-  input,select{padding:6px;font-size:14px}
-  .ok{color:green;font-weight:bold}
-  .err{color:#b00020;font-weight:bold}
-
-  /* Image/canvas */
-  #canvasWrap{margin-top:8px}
-  #shotCanvas{
-    width:100%;
-    max-width:100%;
-    border:1px solid #ccc;
-    border-radius:10px;
-    display:none;
-    touch-action:manipulation;
-  }
-
-  /* Desktop grid */
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-
-  .seatBox{border:1px solid #ddd;border-radius:10px;padding:10px;background:#fafafa}
-  .seatBox h3{margin:0 0 8px;font-size:16px;display:flex;justify-content:space-between;align-items:center}
-  .badge{font-size:12px;padding:3px 8px;border-radius:999px;background:#eee;color:#333}
-  .suitRow{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:center;margin:6px 0}
-
-  /* Suit bar */
-  .suitBar{display:none;margin-top:10px;padding:10px;border:1px solid #e0e0e0;border-radius:10px;background:#fbfbfb}
-  .suitBtn{background:#333;border:0;border-radius:8px;padding:8px 10px;font-size:16px;color:#fff}
-
-  /* Output */
-  .outBox textarea{width:100%;min-height:84px;border-radius:10px;border:1px solid #ddd;padding:10px;font-size:13px}
-
-  /* Mobile tabs */
-  .tabs{display:none;margin:10px 0 8px}
-  .tabBtn{
-    background:#e9e9e9;color:#222;border:1px solid #ddd;
-    border-radius:999px;padding:6px 10px;font-size:13px
-  }
-  .tabBtn.active{background:#1976d2;color:#fff;border-color:#1976d2}
-  .mobileSeat{display:none}
-
-  @media(max-width:820px){
-    .grid{display:none}
-    .tabs{display:flex;gap:8px;flex-wrap:wrap}
-    .mobileSeat{display:block}
-    .seatBox{margin-bottom:10px}
-  }
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  background:#f4f4f4;
+  margin:0;
+  padding:14px;
+}
+h1{margin:0 0 6px;font-size:22px}
+.small{font-size:13px;color:#666}
+.panel{
+  background:#fff;
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{
+  padding:8px 12px;
+  font-size:14px;
+  border-radius:8px;
+  border:0;
+  cursor:pointer;
+  background:#1976d2;
+  color:white;
+}
+button.gray{background:#666}
+input,select{
+  padding:6px;
+  font-size:14px;
+}
+#imgPreview{
+  max-width:100%;
+  border:1px solid #ccc;
+  margin-top:8px;
+  display:none;
+}
+.ok{color:green;font-weight:bold}
+.err{color:#b00020;font-weight:bold}
 </style>
 </head>
 
 <body>
+
 <h1>MK EasyHand App</h1>
 <div class="small">
-  Screenshot → <b>Paste</b> → (optional) <b>Crop</b> → <b>Click image</b> (seat N/E/S/W) → input → <b>Generate LIN/PBN</b> → open Solver/BBO.
-  <br><b>Tip:</b> Crop presets reduce OCR/reading errors (less menus/scores/noise). FIGB preset includes <b>PAR</b>.
+Screenshot → Paste → Click image → Next steps (Solver / BBO)
 </div>
 
-<!-- TOP -->
+<!-- SOURCE + IMAGE -->
 <div class="panel">
   <div class="row">
     <label><b>Source:</b></label>
     <select id="source">
-      <option value="A">A – RealBridge</option>
-      <option value="B">B – BBO</option>
-      <option value="C">C – Federation / Local (FIGB)</option>
-      <option value="D">D – LoveBridge (WBF)</option>
-      <option value="E">E – Bulletin (ACBL / EBL / WBF)</option>
+      <option>A – RealBridge</option>
+      <option>B – BBO</option>
+      <option>C – Federation / Local</option>
+      <option>D – LoveBridge (WBF)</option>
+      <option>E – Bulletin (ACBL / EBL / WBF)</option>
     </select>
 
     <button id="pasteBtn">📋 Paste</button>
-    <input type="file" id="fileInput" accept="image/*" />
-
-    <span class="small"><b>Crop preset:</b></span>
-    <select id="cropMode">
-      <option value="on" selected>ON</option>
-      <option value="off">OFF</option>
-    </select>
-    <button class="light" id="resetCropBtn">Reset crop</button>
-    <button class="light" id="applyCropBtn">Apply crop</button>
-
-    <span class="small" style="margin-left:6px"><b>Board:</b></span>
-    <input id="boardNo" value="1" style="width:56px" />
-
-    <span class="small"><b>Dealer:</b></span>
-    <select id="dealer">
-      <option value="N">N</option><option value="E">E</option><option value="S">S</option><option value="W">W</option>
-    </select>
-
-    <span class="small"><b>Vul:</b></span>
-    <select id="vul">
-      <option value="None">None</option>
-      <option value="NS">NS</option>
-      <option value="EW">EW</option>
-      <option value="All">All</option>
-    </select>
-
-    <button class="gray" id="loadSampleBtn">Load sample</button>
-    <button class="red" id="clearBtn">Clear</button>
+    <input type="file" id="fileInput" accept="image/*">
   </div>
 
   <div id="pasteMsg" class="small"></div>
 
-  <div id="canvasWrap">
-    <canvas id="shotCanvas"></canvas>
-  </div>
-
-  <div id="cropMsg" class="small"></div>
+  <img id="imgPreview">
   <div id="clickMsg" class="small"></div>
-  <div id="seatMsg" class="small"></div>
-
-  <div class="suitBar" id="suitBar">
-    <div class="row">
-      <div class="small"><b>Seat:</b> <span id="seatNow" class="ok">?</span> — tap suit:</div>
-      <button class="suitBtn" id="btnSp">♠</button>
-      <button class="suitBtn" id="btnHe">♥</button>
-      <button class="suitBtn" id="btnDi">♦</button>
-      <button class="suitBtn" id="btnCl">♣</button>
-      <div class="small">(Use <b>10</b> or <b>T</b>)</div>
-    </div>
-  </div>
 </div>
 
-<!-- MANUAL INPUT -->
-<div class="panel" id="manualPanel">
-  <b>Manual hand input</b>
-  <div class="small">Allowed ranks: AKQJT98765432 (10 or T). No spaces.</div>
-
-  <div class="tabs" id="tabs">
-    <button class="tabBtn" data-seat="N" id="tabN">N</button>
-    <button class="tabBtn" data-seat="E" id="tabE">E</button>
-    <button class="tabBtn" data-seat="S" id="tabS">S</button>
-    <button class="tabBtn" data-seat="W" id="tabW">W</button>
-  </div>
-
-  <div class="mobileSeat" id="mobileSeatWrap">
-    <div class="seatBox" id="boxMobile">
-      <h3><span id="mobileSeatTitle">North</span> <span class="badge" id="mobileSeatBadge">N</span></h3>
-      <div class="suitRow"><div>♠</div><input class="mono" id="mS" /></div>
-      <div class="suitRow"><div>♥</div><input class="mono" id="mH" /></div>
-      <div class="suitRow"><div>♦</div><input class="mono" id="mD" /></div>
-      <div class="suitRow"><div>♣</div><input class="mono" id="mC" /></div>
-    </div>
-  </div>
-
-  <div class="grid" style="margin-top:10px">
-    <div class="seatBox" id="boxN">
-      <h3>North <span class="badge">N</span></h3>
-      <div class="suitRow"><div>♠</div><input class="mono" id="nS" /></div>
-      <div class="suitRow"><div>♥</div><input class="mono" id="nH" /></div>
-      <div class="suitRow"><div>♦</div><input class="mono" id="nD" /></div>
-      <div class="suitRow"><div>♣</div><input class="mono" id="nC" /></div>
-    </div>
-
-    <div class="seatBox" id="boxE">
-      <h3>East <span class="badge">E</span></h3>
-      <div class="suitRow"><div>♠</div><input class="mono" id="eS" /></div>
-      <div class="suitRow"><div>♥</div><input class="mono" id="eH" /></div>
-      <div class="suitRow"><div>♦</div><input class="mono" id="eD" /></div>
-      <div class="suitRow"><div>♣</div><input class="mono" id="eC" /></div>
-    </div>
-
-    <div class="seatBox" id="boxS">
-      <h3>South <span class="badge">S</span></h3>
-      <div class="suitRow"><div>♠</div><input class="mono" id="sS" /></div>
-      <div class="suitRow"><div>♥</div><input class="mono" id="sH" /></div>
-      <div class="suitRow"><div>♦</div><input class="mono" id="sD" /></div>
-      <div class="suitRow"><div>♣</div><input class="mono" id="sC" /></div>
-    </div>
-
-    <div class="seatBox" id="boxW">
-      <h3>West <span class="badge">W</span></h3>
-      <div class="suitRow"><div>♠</div><input class="mono" id="wS" /></div>
-      <div class="suitRow"><div>♥</div><input class="mono" id="wH" /></div>
-      <div class="suitRow"><div>♦</div><input class="mono" id="wD" /></div>
-      <div class="suitRow"><div>♣</div><input class="mono" id="wC" /></div>
-    </div>
-  </div>
-
-  <div class="row" style="margin-top:12px">
-    <button class="green" id="genBtn">Generate LIN / PBN (validate)</button>
-    <div id="valMsg" class="small"></div>
-  </div>
-</div>
-
-<!-- OUTPUT -->
-<div class="panel outBox">
-  <b>LIN output</b>
-  <div class="row" style="margin-top:8px">
-    <button class="gray" id="copyLinBtn">Copy LIN</button>
-    <button class="gray" id="dlLinBtn">Download .lin</button>
-    <button class="gray" id="openBsolBtn">Open Bridge Solver Online</button>
-    <button class="gray" id="openBboBtn">Open BBO Handviewer</button>
-  </div>
-  <textarea id="linOut" class="mono" placeholder="(will appear here)"></textarea>
-
-  <div style="height:10px"></div>
-  <b>PBN output</b>
-  <textarea id="pbnOut" class="mono" placeholder="(will appear here)"></textarea>
+<!-- STATUS -->
+<div class="panel">
+  <b>Status</b>
+  <div id="status" class="small">Waiting for image…</div>
 </div>
 
 <script>
-/* =========================
-   0) Helpers + Presets
-========================= */
-
-const PRESETS = {
-  // normalized: x,y,w,h for the main "hands area" (N/E/S/W)
-  A: {x:0.06,y:0.06,w:0.88,h:0.80}, // RealBridge (often clean)
-  B: {x:0.06,y:0.08,w:0.88,h:0.80}, // BBO: leave a bit more top margin
-  // FIGB vertical (include PAR): keep center with hands + PAR below
-  C: {x:0.06,y:0.10,w:0.88,h:0.78}, // includes PAR area (bottom) in most screenshots
-  D: {x:0.06,y:0.10,w:0.88,h:0.78}, // LoveBridge (WBF style)
-  E: {x:0.10,y:0.10,w:0.80,h:0.78}, // Bulletin: usually centered hands
-};
-
-function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-function isMobile(){ return window.matchMedia && window.matchMedia("(max-width: 820px)").matches; }
-
-/* =========================
-   1) DOM
-========================= */
-
-const sourceSel = document.getElementById("source");
-const cropModeSel = document.getElementById("cropMode");
-const resetCropBtn = document.getElementById("resetCropBtn");
-const applyCropBtn = document.getElementById("applyCropBtn");
-
+const imgPreview = document.getElementById("imgPreview");
 const pasteBtn = document.getElementById("pasteBtn");
 const fileInput = document.getElementById("fileInput");
 const pasteMsg = document.getElementById("pasteMsg");
-const cropMsg = document.getElementById("cropMsg");
 const clickMsg = document.getElementById("clickMsg");
-const seatMsg = document.getElementById("seatMsg");
+const statusBox = document.getElementById("status");
 
-const canvas = document.getElementById("shotCanvas");
-const ctx = canvas.getContext("2d");
-
-const suitBar = document.getElementById("suitBar");
-const seatNow = document.getElementById("seatNow");
-const btnSp = document.getElementById("btnSp");
-const btnHe = document.getElementById("btnHe");
-const btnDi = document.getElementById("btnDi");
-const btnCl = document.getElementById("btnCl");
-
-const boardNo = document.getElementById("boardNo");
-const dealerSel = document.getElementById("dealer");
-const vulSel = document.getElementById("vul");
-
-const loadSampleBtn = document.getElementById("loadSampleBtn");
-const clearBtn = document.getElementById("clearBtn");
-
-const genBtn = document.getElementById("genBtn");
-const valMsg = document.getElementById("valMsg");
-const linOut = document.getElementById("linOut");
-const pbnOut = document.getElementById("pbnOut");
-const copyLinBtn = document.getElementById("copyLinBtn");
-const dlLinBtn = document.getElementById("dlLinBtn");
-const openBsolBtn = document.getElementById("openBsolBtn");
-const openBboBtn = document.getElementById("openBboBtn");
-
-// desktop inputs
-const d = {
-  N: {S:document.getElementById("nS"),H:document.getElementById("nH"),D:document.getElementById("nD"),C:document.getElementById("nC")},
-  E: {S:document.getElementById("eS"),H:document.getElementById("eH"),D:document.getElementById("eD"),C:document.getElementById("eC")},
-  S: {S:document.getElementById("sS"),H:document.getElementById("sH"),D:document.getElementById("sD"),C:document.getElementById("sC")},
-  W: {S:document.getElementById("wS"),H:document.getElementById("wH"),D:document.getElementById("wD"),C:document.getElementById("wC")},
-};
-
-// mobile inputs
-const tabsWrap = document.getElementById("tabs");
-const tabN = document.getElementById("tabN");
-const tabE = document.getElementById("tabE");
-const tabS = document.getElementById("tabS");
-const tabW = document.getElementById("tabW");
-const tabBtns = [tabN,tabE,tabS,tabW];
-
-const mS = document.getElementById("mS");
-const mH = document.getElementById("mH");
-const mD = document.getElementById("mD");
-const mC = document.getElementById("mC");
-const mobileSeatTitle = document.getElementById("mobileSeatTitle");
-const mobileSeatBadge = document.getElementById("mobileSeatBadge");
-
-/* =========================
-   2) State: image + crop
-========================= */
-
-let originalImg = null;     // HTMLImageElement: original loaded
-let workingImg = null;      // HTMLImageElement: current (cropped or original)
-let crop = null;            // crop rect in normalized coords (x,y,w,h) over workingImg
-let dragging = null;        // {mode:"move"|"nw"|"ne"|"sw"|"se", start...}
-let activeSeat = null;
-
-// card storage
-const hand = {
-  N:{S:"",H:"",D:"",C:""},
-  E:{S:"",H:"",D:"",C:""},
-  S:{S:"",H:"",D:"",C:""},
-  W:{S:"",H:"",D:"",C:""},
-};
-
-/* =========================
-   3) Sync UI <-> Storage
-========================= */
-
-function syncToDesktop(){
-  for(const seat of ["N","E","S","W"]){
-    for(const su of ["S","H","D","C"]){
-      d[seat][su].value = hand[seat][su];
-    }
-  }
-}
-function syncFromDesktop(){
-  for(const seat of ["N","E","S","W"]){
-    for(const su of ["S","H","D","C"]){
-      hand[seat][su] = d[seat][su].value || "";
-    }
-  }
-}
-function setTabsActive(seat){
-  tabBtns.forEach(b=>b.classList.remove("active"));
-  ({N:tabN,E:tabE,S:tabS,W:tabW}[seat]).classList.add("active");
-}
-function loadSeatToMobile(seat){
-  mS.value = hand[seat].S; mH.value = hand[seat].H; mD.value = hand[seat].D; mC.value = hand[seat].C;
-  const name = seat==="N"?"North":seat==="E"?"East":seat==="S"?"South":"West";
-  mobileSeatTitle.textContent = name;
-  mobileSeatBadge.textContent = seat;
-}
-function saveMobileToSeat(seat){
-  hand[seat].S = mS.value || "";
-  hand[seat].H = mH.value || "";
-  hand[seat].D = mD.value || "";
-  hand[seat].C = mC.value || "";
-}
-tabBtns.forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    const seat = btn.dataset.seat;
-    const cur = tabBtns.find(b=>b.classList.contains("active"))?.dataset?.seat || "N";
-    saveMobileToSeat(cur);
-    setActiveSeat(seat);
-  });
-});
-[mS,mH,mD,mC].forEach(inp=>{
-  inp.addEventListener("input", ()=>{
-    const cur = tabBtns.find(b=>b.classList.contains("active"))?.dataset?.seat || "N";
-    saveMobileToSeat(cur);
-    syncToDesktop();
-  });
-});
-for(const seat of ["N","E","S","W"]){
-  for(const su of ["S","H","D","C"]){
-    d[seat][su].addEventListener("input", ()=>{
-      syncFromDesktop();
-      if(isMobile()){
-        const cur = tabBtns.find(b=>b.classList.contains("active"))?.dataset?.seat || "N";
-        loadSeatToMobile(cur);
-      }
-    });
-  }
+// ---------- IMAGE HANDLING ----------
+function showImage(blob, origin){
+  const url = URL.createObjectURL(blob);
+  imgPreview.src = url;
+  imgPreview.style.display = "block";
+  pasteMsg.textContent = origin;
+  statusBox.textContent = "Image ready. Click on it.";
 }
 
-/* =========================
-   4) Canvas drawing + crop UI
-========================= */
-
-function setCropFromPreset(){
-  const key = sourceSel.value;
-  const preset = PRESETS[key] || {x:0,y:0,w:1,h:1};
-  crop = {...preset};
-  draw();
-  cropMsg.innerHTML = cropModeSel.value==="on"
-    ? `Crop preset loaded for <b>${key}</b>. Drag corners/inside. Then <b>Apply crop</b>.`
-    : `Crop is <b>OFF</b> (you can still click seats).`;
-}
-
-function fitCanvasToWidth(img){
-  // Render canvas at image aspect ratio, sized to container width (CSS handles width:100%)
-  const maxW = Math.min(980, document.body.clientWidth - 28);
-  const scale = maxW / img.naturalWidth;
-  const w = Math.round(img.naturalWidth * scale);
-  const h = Math.round(img.naturalHeight * scale);
-  canvas.width = w;
-  canvas.height = h;
-}
-
-function draw(){
-  if(!workingImg) return;
-  canvas.style.display = "block";
-  // clear
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // draw image fitted to canvas
-  ctx.drawImage(workingImg, 0,0, canvas.width, canvas.height);
-
-  // draw crop overlay if ON
-  if(cropModeSel.value !== "on" || !crop) return;
-
-  const x = crop.x * canvas.width;
-  const y = crop.y * canvas.height;
-  const w = crop.w * canvas.width;
-  const h = crop.h * canvas.height;
-
-  // dim outside
-  ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
-  ctx.beginPath();
-  ctx.rect(0,0,canvas.width,canvas.height);
-  ctx.rect(x,y,w,h);
-  ctx.fill("evenodd");
-  ctx.restore();
-
-  // border
-  ctx.save();
-  ctx.strokeStyle = "rgba(0,255,0,0.95)";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(x,y,w,h);
-  ctx.restore();
-
-  // handles (corners)
-  const hs = 10;
-  ctx.fillStyle = "rgba(255,255,255,0.95)";
-  ctx.strokeStyle = "rgba(0,0,0,0.6)";
-  const corners = [
-    {cx:x, cy:y, mode:"nw"},
-    {cx:x+w, cy:y, mode:"ne"},
-    {cx:x, cy:y+h, mode:"sw"},
-    {cx:x+w, cy:y+h, mode:"se"},
-  ];
-  for(const c of corners){
-    ctx.beginPath();
-    ctx.rect(c.cx-hs, c.cy-hs, hs*2, hs*2);
-    ctx.fill();
-    ctx.stroke();
-  }
-}
-
-function hitTestCrop(px,py){
-  if(cropModeSel.value !== "on" || !crop) return null;
-  const x = crop.x * canvas.width;
-  const y = crop.y * canvas.height;
-  const w = crop.w * canvas.width;
-  const h = crop.h * canvas.height;
-  const hs = 14;
-
-  const near = (ax,ay)=> Math.abs(px-ax)<=hs && Math.abs(py-ay)<=hs;
-
-  if(near(x,y)) return "nw";
-  if(near(x+w,y)) return "ne";
-  if(near(x,y+h)) return "sw";
-  if(near(x+w,y+h)) return "se";
-
-  if(px>=x && px<=x+w && py>=y && py<=y+h) return "move";
-  return null;
-}
-
-function canvasPoint(evt){
-  const rect = canvas.getBoundingClientRect();
-  const cx = evt.touches ? evt.touches[0].clientX : evt.clientX;
-  const cy = evt.touches ? evt.touches[0].clientY : evt.clientY;
-  return {x: cx - rect.left, y: cy - rect.top};
-}
-
-function startDrag(evt){
-  if(!workingImg) return;
-  const p = canvasPoint(evt);
-  const mode = hitTestCrop(p.x,p.y);
-  if(!mode) return;
-  evt.preventDefault?.();
-
-  dragging = {
-    mode,
-    startX:p.x, startY:p.y,
-    startCrop:{...crop}
-  };
-}
-
-function doDrag(evt){
-  if(!dragging || !crop) return;
-  const p = canvasPoint(evt);
-  const dx = (p.x - dragging.startX) / canvas.width;
-  const dy = (p.y - dragging.startY) / canvas.height;
-
-  let x = dragging.startCrop.x;
-  let y = dragging.startCrop.y;
-  let w = dragging.startCrop.w;
-  let h = dragging.startCrop.h;
-
-  const minSize = 0.12;
-
-  if(dragging.mode === "move"){
-    x = clamp(x + dx, 0, 1 - w);
-    y = clamp(y + dy, 0, 1 - h);
-  } else {
-    // resize corners
-    if(dragging.mode.includes("n")){
-      y = clamp(y + dy, 0, y + h - minSize);
-      h = (dragging.startCrop.y + dragging.startCrop.h) - y;
-    }
-    if(dragging.mode.includes("s")){
-      h = clamp(h + dy, minSize, 1 - y);
-    }
-    if(dragging.mode.includes("w")){
-      x = clamp(x + dx, 0, x + w - minSize);
-      w = (dragging.startCrop.x + dragging.startCrop.w) - x;
-    }
-    if(dragging.mode.includes("e")){
-      w = clamp(w + dx, minSize, 1 - x);
-    }
-  }
-
-  crop = {x,y,w,h};
-  draw();
-}
-
-function endDrag(){
-  dragging = null;
-}
-
-/* =========================
-   5) Image load: paste/file/sample
-========================= */
-
-function loadImageFromBlob(blob, originText){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.onload = ()=>resolve(img);
-    img.onerror = reject;
-    img.src = URL.createObjectURL(blob);
-  }).then(img=>{
-    originalImg = img;
-    workingImg = img;
-    fitCanvasToWidth(workingImg);
-    canvas.style.display="block";
-    pasteMsg.textContent = originText;
-    clickMsg.textContent = "";
-    seatMsg.textContent = "Click the screenshot near a hand to select seat N/E/S/W.";
-    suitBar.style.display = "none";
-    activeSeat = null;
-    setCropFromPreset();
-    draw();
-  });
-}
-
-pasteBtn.onclick = async ()=>{
-  pasteMsg.textContent="";
+// ---------- PASTE FROM CLIPBOARD ----------
+pasteBtn.onclick = async () => {
+  pasteMsg.textContent = "";
   if(!navigator.clipboard || !navigator.clipboard.read){
-    pasteMsg.textContent="Clipboard paste not supported here.";
+    pasteMsg.textContent = "Clipboard paste not supported here.";
     return;
   }
   try{
     const items = await navigator.clipboard.read();
     for(const it of items){
-      const t = it.types.find(x=>x.startsWith("image/"));
+      const t = it.types.find(x => x.startsWith("image/"));
       if(t){
         const blob = await it.getType(t);
-        await loadImageFromBlob(blob, "Image pasted from clipboard.");
+        showImage(blob, "Image pasted from clipboard.");
         return;
       }
     }
-    pasteMsg.textContent="No image found in clipboard.";
-  }catch{
-    pasteMsg.textContent="Clipboard access denied (HTTPS required).";
+    pasteMsg.textContent = "No image in clipboard.";
+  }catch(err){
+    pasteMsg.textContent = "Clipboard access denied (HTTPS required).";
   }
 };
 
-fileInput.onchange = async ()=>{
+// ---------- FILE UPLOAD ----------
+fileInput.onchange = () => {
   const f = fileInput.files[0];
   if(!f) return;
-  await loadImageFromBlob(f, "Image loaded from file.");
+  showImage(f, "Image loaded from file.");
 };
 
-sourceSel.onchange = ()=>{
-  if(workingImg){
-    setCropFromPreset();
-  }
-};
+// ---------- CLICK DETECTION ----------
+function handleClick(e){
+  if(imgPreview.style.display === "none") return;
 
-cropModeSel.onchange = ()=>{
-  if(workingImg){
-    draw();
-    cropMsg.innerHTML = cropModeSel.value==="on"
-      ? "Crop ON. Drag corners/inside, then Apply crop."
-      : "Crop OFF. You can still click seats.";
-  }
-};
+  const rect = imgPreview.getBoundingClientRect();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  const cy = e.touches ? e.touches[0].clientY : e.clientY;
 
-resetCropBtn.onclick = ()=>{
-  if(!workingImg) return;
-  setCropFromPreset();
-};
-
-applyCropBtn.onclick = async ()=>{
-  if(!workingImg) return;
-  if(cropModeSel.value !== "on" || !crop){
-    cropMsg.innerHTML = `<span class="err">Crop is OFF or not set.</span>`;
-    return;
-  }
-
-  // Crop in natural pixel coords of workingImg
-  const sx = Math.round(crop.x * workingImg.naturalWidth);
-  const sy = Math.round(crop.y * workingImg.naturalHeight);
-  const sw = Math.round(crop.w * workingImg.naturalWidth);
-  const sh = Math.round(crop.h * workingImg.naturalHeight);
-
-  const tmp = document.createElement("canvas");
-  tmp.width = sw;
-  tmp.height = sh;
-  const tctx = tmp.getContext("2d");
-  tctx.drawImage(workingImg, sx, sy, sw, sh, 0, 0, sw, sh);
-
-  const blob = await new Promise(res=> tmp.toBlob(res, "image/png", 1.0));
-  const img = await loadImageFromBlob(blob, "Crop applied ✅ (working image updated).");
-  // keep crop as full (so user can still re-crop if needed)
-  crop = {x:0,y:0,w:1,h:1};
-  draw();
-  cropMsg.innerHTML = `<span class="ok">Crop applied</span>. Now click N/E/S/W on the cropped image.`;
-};
-
-/* =========================
-   6) Seat detection on click
-========================= */
-
-function detectSeat(nx, ny){
-  // simple quadrants
-  const TOP=0.28, BOT=0.72, LEFT=0.28, RIGHT=0.72;
-  if(ny < TOP) return "N";
-  if(ny > BOT) return "S";
-  if(nx < LEFT) return "W";
-  if(nx > RIGHT) return "E";
-  return null;
-}
-
-function setActiveSeat(seat){
-  activeSeat = seat;
-  seatNow.textContent = seat;
-  suitBar.style.display = "block";
-
-  if(isMobile()){
-    tabsWrap.style.display="flex";
-    const cur = tabBtns.find(b=>b.classList.contains("active"))?.dataset?.seat || "N";
-    saveMobileToSeat(cur);
-    setTabsActive(seat);
-    loadSeatToMobile(seat);
-    syncToDesktop();
-    setTimeout(()=>mS.focus(), 120);
-  }else{
-    syncToDesktop();
-    setTimeout(()=>d[seat].S.focus(), 120);
-  }
-}
-
-function handleCanvasClick(evt){
-  if(!workingImg) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const cx = evt.touches ? evt.touches[0].clientX : evt.clientX;
-  const cy = evt.touches ? evt.touches[0].clientY : evt.clientY;
   const x = Math.round(cx - rect.left);
   const y = Math.round(cy - rect.top);
 
-  const nx = x / rect.width;
-  const ny = y / rect.height;
+  const nx = (x / rect.width).toFixed(3);
+  const ny = (y / rect.height).toFixed(3);
 
-  clickMsg.textContent = `Clicked at x=${x}, y=${y} | normalized (${nx.toFixed(3)}, ${ny.toFixed(3)})`;
-
-  // If crop is ON, allow crop drag first
-  if(cropModeSel.value==="on"){
-    const mode = hitTestCrop(x,y);
-    if(mode){
-      // user is trying to drag crop, not select seat
-      return;
-    }
-  }
-
-  const seat = detectSeat(nx, ny);
-  if(!seat){
-    seatMsg.innerHTML = `<span class="err">Center area. Click closer to a hand (N/E/S/W).</span>`;
-    suitBar.style.display="none";
-    activeSeat=null;
-    return;
-  }
-  seatMsg.innerHTML = `<span class="ok">Seat detected: ${seat}</span>`;
-  setActiveSeat(seat);
-  document.getElementById("manualPanel").scrollIntoView({behavior:"smooth", block:"start"});
+  clickMsg.innerHTML =
+    `Clicked at x=${x}, y=${y} &nbsp; | &nbsp; normalized (${nx}, ${ny})`;
 }
 
-// click/touch for seat (only if not dragging crop)
-canvas.addEventListener("click", (e)=>{
-  // if crop ON and click on crop handles/inside => start drag; otherwise seat click
-  const p = canvasPoint(e);
-  const ht = hitTestCrop(p.x,p.y);
-  if(ht){ startDrag(e); return; }
-  handleCanvasClick(e);
-});
-canvas.addEventListener("touchstart", (e)=>{
-  const p = canvasPoint(e);
-  const ht = hitTestCrop(p.x,p.y);
-  if(ht){ startDrag(e); return; }
-  handleCanvasClick(e);
-},{passive:true});
-
-canvas.addEventListener("mousemove", (e)=>doDrag(e));
-canvas.addEventListener("touchmove", (e)=>doDrag(e), {passive:true});
-window.addEventListener("mouseup", endDrag);
-window.addEventListener("touchend", endDrag);
-
-/* =========================
-   7) Suit focus
-========================= */
-
-function focusSuit(su){
-  if(!activeSeat) return;
-  if(isMobile()){
-    if(su==="S") mS.focus();
-    if(su==="H") mH.focus();
-    if(su==="D") mD.focus();
-    if(su==="C") mC.focus();
-  }else{
-    d[activeSeat][su].focus();
-  }
-}
-btnSp.onclick = ()=>focusSuit("S");
-btnHe.onclick = ()=>focusSuit("H");
-btnDi.onclick = ()=>focusSuit("D");
-btnCl.onclick = ()=>focusSuit("C");
-
-/* =========================
-   8) Normalize + Validate + LIN/PBN
-========================= */
-
-const RANKS="AKQJT98765432";
-function normalizeCards(txt){
-  if(!txt) return "";
-  let t=(""+txt).toUpperCase();
-  t=t.replaceAll("10","T").replaceAll(" ","").replaceAll("-","");
-  t=t.replaceAll("♠","").replaceAll("♥","").replaceAll("♦","").replaceAll("♣","");
-  let out="";
-  for(const ch of t){ if(RANKS.includes(ch)) out+=ch; }
-  return out;
-}
-
-function buildAllCards(){
-  if(isMobile()){
-    const cur = tabBtns.find(b=>b.classList.contains("active"))?.dataset?.seat || "N";
-    saveMobileToSeat(cur);
-    syncToDesktop();
-  }else{
-    syncFromDesktop();
-  }
-
-  const seats=["N","E","S","W"], suits=["S","H","D","C"];
-  const seen=new Set();
-  const seatCounts={N:0,E:0,S:0,W:0};
-  const errors=[];
-  const norm={N:{},E:{},S:{},W:{}};
-
-  for(const seat of seats){
-    for(const su of suits){
-      const v = normalizeCards(hand[seat][su]);
-      hand[seat][su]=v;
-      norm[seat][su]=v;
-      for(const r of v){
-        const id=su+r;
-        if(seen.has(id)) errors.push(`Duplicate card: ${id}`);
-        seen.add(id);
-        seatCounts[seat]+=1;
-      }
-    }
-    if(seatCounts[seat]!==13) errors.push(`Seat ${seat}: ${seatCounts[seat]} cards (expected 13)`);
-  }
-  if(seen.size!==52) errors.push(`Total cards: ${seen.size} (expected 52)`);
-
-  syncToDesktop();
-  if(isMobile()){
-    const cur = tabBtns.find(b=>b.classList.contains("active"))?.dataset?.seat || "N";
-    loadSeatToMobile(cur);
-  }
-  return {norm, errors};
-}
-
-function toPBNDeal(norm){
-  const seatStr = (seat)=> `${norm[seat].S}.${norm[seat].H}.${norm[seat].D}.${norm[seat].C}`;
-  return `N:${seatStr("N")} ${seatStr("E")} ${seatStr("S")} ${seatStr("W")}`;
-}
-
-function toLIN(norm){
-  const map={S:"1",W:"2",N:"3",E:"4"};
-  const di=map[dealerSel.value]||"3";
-  const N=`${norm.N.S}${norm.N.H}${norm.N.D}${norm.N.C}`;
-  const E=`${norm.E.S}${norm.E.H}${norm.E.D}${norm.E.C}`;
-  const S=`${norm.S.S}${norm.S.H}${norm.S.D}${norm.S.C}`;
-  const W=`${norm.W.S}${norm.W.H}${norm.W.D}${norm.W.C}`;
-  const bd=parseInt(boardNo.value||"1",10)||1;
-  return `pn|N,E,S,W|sv|o|bd|${bd}|md|${di}${N},${E},${S},${W}|`;
-}
-
-function buildPBN(norm){
-  const bd=parseInt(boardNo.value||"1",10)||1;
-  const dl=dealerSel.value;
-  const vu=vulSel.value;
-  const deal=toPBNDeal(norm);
-  return [
-    `% PBN 2.1`,
-    `[Event "MK EasyHand"]`,
-    `[Board "${bd}"]`,
-    `[Dealer "${dl}"]`,
-    `[Vulnerable "${vu}"]`,
-    `[Deal "${deal}"]`
-  ].join("\n");
-}
-
-genBtn.onclick = ()=>{
-  const {norm, errors} = buildAllCards();
-  if(errors.length){
-    valMsg.innerHTML = `<span class="err">Validation KO</span> — ${errors[0]}`;
-    linOut.value=""; pbnOut.value="";
-    return;
-  }
-  valMsg.innerHTML = `<span class="ok">Validation OK</span> (52 cards)`;
-  linOut.value = toLIN(norm);
-  pbnOut.value = buildPBN(norm);
-};
-
-copyLinBtn.onclick = async ()=>{
-  if(!linOut.value.trim()) return;
-  try{ await navigator.clipboard.writeText(linOut.value); valMsg.innerHTML=`<span class="ok">LIN copied</span>`; }
-  catch{ valMsg.innerHTML=`<span class="err">Copy failed</span>`; }
-};
-
-dlLinBtn.onclick = ()=>{
-  const txt = linOut.value.trim();
-  if(!txt) return;
-  const blob = new Blob([txt], {type:"text/plain"});
-  const a=document.createElement("a");
-  const bd=parseInt(boardNo.value||"1",10)||1;
-  a.download=`board${bd}.lin`;
-  a.href=URL.createObjectURL(blob);
-  a.click();
-};
-
-openBboBtn.onclick = ()=>{
-  const txt=linOut.value.trim();
-  if(!txt){ valMsg.innerHTML=`<span class="err">Generate LIN first</span>`; return; }
-  const url="https://www.bridgebase.com/tools/handviewer.html?lin="+encodeURIComponent(txt);
-  window.open(url,"_blank");
-};
-
-openBsolBtn.onclick = ()=>{
-  if(!pbnOut.value.trim()){
-    valMsg.innerHTML = `<span class="err">Generate PBN first</span>`;
-    return;
-  }
-  window.open("https://bridge-solver.com/","_blank");
-  valMsg.innerHTML = `<span class="ok">Bridge Solver opened</span> — paste the PBN in “Input Hand”.`;
-};
-
-/* =========================
-   9) Sample + Clear
-========================= */
-
-loadSampleBtn.onclick = ()=>{
-  boardNo.value="1"; dealerSel.value="N"; vulSel.value="None";
-  hand.N={S:"AJ542",H:"K6543",D:"64",C:"9"};
-  hand.E={S:"973",H:"10987",D:"8",C:"AJ1053"};
-  hand.S={S:"K106",H:"AQ",D:"102",C:"KQ7642"};
-  hand.W={S:"Q8",H:"J2",D:"AKQJ9753",C:"8"};
-  syncToDesktop();
-  if(isMobile()){
-    tabsWrap.style.display="flex";
-    setTabsActive("N");
-    loadSeatToMobile("N");
-  }
-  valMsg.innerHTML=`<span class="small">Sample loaded</span>`;
-  linOut.value=""; pbnOut.value="";
-};
-
-clearBtn.onclick = ()=>{
-  for(const seat of ["N","E","S","W"]){ hand[seat]={S:"",H:"",D:"",C:""}; }
-  syncToDesktop();
-  if(isMobile()){
-    tabsWrap.style.display="flex";
-    setTabsActive("N");
-    loadSeatToMobile("N");
-  }
-  linOut.value=""; pbnOut.value="";
-  valMsg.textContent="";
-  suitBar.style.display="none";
-  activeSeat=null;
-  seatMsg.textContent="";
-  clickMsg.textContent="";
-  cropMsg.textContent="";
-  pasteMsg.textContent="";
-  // keep image as-is
-};
-
-/* =========================
-   10) Init
-========================= */
-
-window.addEventListener("load", ()=>{
-  if(isMobile()){
-    tabsWrap.style.display="flex";
-    setTabsActive("N");
-    loadSeatToMobile("N");
-  }
-});
-window.addEventListener("resize", ()=>{
-  if(workingImg){
-    fitCanvasToWidth(workingImg);
-    draw();
-  }
-});
+imgPreview.addEventListener("click", handleClick);
+imgPreview.addEventListener("touchstart", handleClick, {passive:true});
 </script>
 
 </body>
