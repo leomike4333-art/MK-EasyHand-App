@@ -1,153 +1,175 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
-<meta charset="UTF-8">
-<title>MK EasyHand App – Paste & Click</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MK-EasyHand-App</title>
 <style>
-body{
-  font-family: Arial, Helvetica, sans-serif;
-  background:#f4f4f4;
-  margin:0;
-  padding:14px;
-}
-h1{margin:0 0 6px;font-size:22px}
-.small{font-size:13px;color:#666}
-.panel{
-  background:#fff;
-  border-radius:10px;
-  padding:12px;
-  margin-bottom:12px;
-}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-button{
-  padding:8px 12px;
-  font-size:14px;
-  border-radius:8px;
-  border:0;
-  cursor:pointer;
-  background:#1976d2;
-  color:white;
-}
-button.gray{background:#666}
-input,select{
-  padding:6px;
-  font-size:14px;
-}
-#imgPreview{
-  max-width:100%;
-  border:1px solid #ccc;
-  margin-top:8px;
-  display:none;
-}
-.ok{color:green;font-weight:bold}
-.err{color:#b00020;font-weight:bold}
+  :root{--bg:#f4f4f4;--card:#fff;--muted:#666;--ok:#0a7a2f;--bad:#b00020;--blue:#1976d2}
+  body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0;padding:14px}
+  h1{font-size:20px;margin:0 0 6px}
+  .muted{color:var(--muted);font-size:13px;line-height:1.35}
+  .box{background:var(--card);border-radius:12px;padding:12px;margin:12px 0}
+  .sources{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .srcRow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;border:1px solid #e8e8e8;border-radius:12px;padding:10px}
+  .srcTag{font-weight:bold;min-width:22px}
+  .srcName{flex:1}
+  button{padding:10px 12px;border:0;border-radius:10px;background:var(--blue);color:#fff;cursor:pointer;font-size:14px}
+  button.gray{background:#666}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  #imgPreview{max-width:100%;border:1px solid #ddd;border-radius:10px;margin-top:10px;display:none}
+  .statusLine{margin-top:8px}
+  .ok{color:var(--ok);font-weight:bold}
+  .bad{color:var(--bad);font-weight:bold}
+  input[type="file"]{font-size:14px}
+  .pill{display:inline-block;padding:3px 8px;border-radius:999px;background:#eef3ff;color:#234;font-size:12px}
 </style>
 </head>
 
 <body>
-
-<h1>MK EasyHand App</h1>
-<div class="small">
-Screenshot → Paste → Click image → Next steps (Solver / BBO)
+<h1>MK-EasyHand-App</h1>
+<div class="muted">
+  Screenshot → Estrai mano → Apri Bridge Solver / BBO.<br>
+  Suggerimento: fai lo screenshot e poi usa <b>Incolla</b> (immagine negli appunti).
 </div>
 
-<!-- SOURCE + IMAGE -->
-<div class="panel">
-  <div class="row">
-    <label><b>Source:</b></label>
-    <select id="source">
-      <option>A – RealBridge</option>
-      <option>B – BBO</option>
-      <option>C – Federation / Local</option>
-      <option>D – LoveBridge (WBF)</option>
-      <option>E – Bulletin (ACBL / EBL / WBF)</option>
-    </select>
+<div class="box">
+  <div class="muted"><span class="pill">Metodo veloce</span> Seleziona la sorgente e premi <b>Incolla</b>.</div>
 
-    <button id="pasteBtn">📋 Paste</button>
-    <input type="file" id="fileInput" accept="image/*">
+  <div class="sources">
+    <div class="srcRow">
+      <div class="srcTag">A</div>
+      <div class="srcName">RealBridge</div>
+      <button type="button" class="pasteBtn" data-source="A">📋 Incolla</button>
+    </div>
+
+    <div class="srcRow">
+      <div class="srcTag">B</div>
+      <div class="srcName">BBO</div>
+      <button type="button" class="pasteBtn" data-source="B">📋 Incolla</button>
+    </div>
+
+    <div class="srcRow">
+      <div class="srcTag">C</div>
+      <div class="srcName">Federation / Local software (es. MY FIGB)</div>
+      <button type="button" class="pasteBtn" data-source="C">📋 Incolla</button>
+    </div>
+
+    <div class="srcRow">
+      <div class="srcTag">D</div>
+      <div class="srcName">LoveBridge (WBF)</div>
+      <button type="button" class="pasteBtn" data-source="D">📋 Incolla</button>
+    </div>
+
+    <div class="srcRow">
+      <div class="srcTag">E</div>
+      <div class="srcName">Bulletin diagram (ACBL / EBL / WBF)</div>
+      <button type="button" class="pasteBtn" data-source="E">📋 Incolla</button>
+    </div>
   </div>
 
-  <div id="pasteMsg" class="small"></div>
+  <div class="statusLine muted" style="margin-top:12px">
+    <b>Oppure</b> carica il file manualmente:
+    <input type="file" id="fileInput" accept="image/*" />
+    <button type="button" id="useFileBtn" class="gray">Usa questo file</button>
+  </div>
 
-  <img id="imgPreview">
-  <div id="clickMsg" class="small"></div>
+  <div id="pasteStatus" class="muted statusLine"></div>
+
+  <img id="imgPreview" alt="Preview screenshot" />
 </div>
 
-<!-- STATUS -->
-<div class="panel">
-  <b>Status</b>
-  <div id="status" class="small">Waiting for image…</div>
+<div class="box">
+  <div><b>Stato</b></div>
+  <div id="state" class="muted">In attesa di immagine…</div>
+  <div id="chosen" class="muted" style="margin-top:6px"></div>
 </div>
 
 <script>
-const imgPreview = document.getElementById("imgPreview");
-const pasteBtn = document.getElementById("pasteBtn");
-const fileInput = document.getElementById("fileInput");
-const pasteMsg = document.getElementById("pasteMsg");
-const clickMsg = document.getElementById("clickMsg");
-const statusBox = document.getElementById("status");
+  const pasteStatus = document.getElementById("pasteStatus");
+  const imgPreview = document.getElementById("imgPreview");
+  const state = document.getElementById("state");
+  const chosen = document.getElementById("chosen");
+  const fileInput = document.getElementById("fileInput");
+  const useFileBtn = document.getElementById("useFileBtn");
+  const pasteBtns = document.querySelectorAll(".pasteBtn");
 
-// ---------- IMAGE HANDLING ----------
-function showImage(blob, origin){
-  const url = URL.createObjectURL(blob);
-  imgPreview.src = url;
-  imgPreview.style.display = "block";
-  pasteMsg.textContent = origin;
-  statusBox.textContent = "Image ready. Click on it.";
-}
+  let currentSource = null;   // "A".."E"
+  let currentBlob = null;     // screenshot blob
 
-// ---------- PASTE FROM CLIPBOARD ----------
-pasteBtn.onclick = async () => {
-  pasteMsg.textContent = "";
-  if(!navigator.clipboard || !navigator.clipboard.read){
-    pasteMsg.textContent = "Clipboard paste not supported here.";
-    return;
+  function showStatusOK(msg){
+    pasteStatus.innerHTML = `<span class="ok">✅ ${msg}</span>`;
   }
-  try{
+  function showStatusBad(msg){
+    pasteStatus.innerHTML = `<span class="bad">❌ ${msg}</span>`;
+  }
+
+  function setCurrent(source){
+    currentSource = source;
+    chosen.textContent = source ? `Sorgente selezionata: ${source}` : "";
+  }
+
+  function handleImageBlob(blob, how){
+    if(!blob){
+      showStatusBad("Nessuna immagine.");
+      return;
+    }
+    currentBlob = blob;
+    const url = URL.createObjectURL(blob);
+    imgPreview.src = url;
+    imgPreview.style.display = "block";
+    state.innerHTML = `Immagine caricata. <b>Pronta</b> per estrazione mano (fase successiva).`;
+    showStatusOK(`Immagine acquisita (${how}).`);
+  }
+
+  async function pasteFromClipboard(){
+    if (!navigator.clipboard || !navigator.clipboard.read) {
+      showStatusBad("Funzione Incolla non supportata qui. Usa ‘Carica file’. (Serve HTTPS e browser moderno)");
+      return null;
+    }
     const items = await navigator.clipboard.read();
-    for(const it of items){
-      const t = it.types.find(x => x.startsWith("image/"));
-      if(t){
-        const blob = await it.getType(t);
-        showImage(blob, "Image pasted from clipboard.");
-        return;
+    for (const item of items) {
+      const imgType = item.types.find(t => t.startsWith("image/"));
+      if (imgType) {
+        return await item.getType(imgType);
       }
     }
-    pasteMsg.textContent = "No image in clipboard.";
-  }catch(err){
-    pasteMsg.textContent = "Clipboard access denied (HTTPS required).";
+    return null;
   }
-};
 
-// ---------- FILE UPLOAD ----------
-fileInput.onchange = () => {
-  const f = fileInput.files[0];
-  if(!f) return;
-  showImage(f, "Image loaded from file.");
-};
+  pasteBtns.forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const src = btn.getAttribute("data-source");
+      setCurrent(src);
+      pasteStatus.textContent = "Leggo dagli appunti…";
+      try{
+        const blob = await pasteFromClipboard();
+        if(!blob){
+          showStatusBad("Negli appunti non c’è un’immagine. Fai prima uno screenshot e riprova.");
+          return;
+        }
+        handleImageBlob(blob, `Incolla (${src})`);
+      }catch(err){
+        console.error(err);
+        showStatusBad("Impossibile leggere gli appunti (permessi/HTTPS). Usa ‘Carica file’.");
+      }
+    });
+  });
 
-// ---------- CLICK DETECTION ----------
-function handleClick(e){
-  if(imgPreview.style.display === "none") return;
+  // Fallback: file picker
+  useFileBtn.addEventListener("click", () => {
+    const f = fileInput.files && fileInput.files[0];
+    if(!f){
+      showStatusBad("Seleziona prima un file immagine.");
+      return;
+    }
+    // se l'utente non ha scelto una source, mettiamo C (Other) come default ragionevole
+    if(!currentSource) setCurrent("C");
+    handleImageBlob(f, "Carica file");
+  });
 
-  const rect = imgPreview.getBoundingClientRect();
-  const cx = e.touches ? e.touches[0].clientX : e.clientX;
-  const cy = e.touches ? e.touches[0].clientY : e.clientY;
-
-  const x = Math.round(cx - rect.left);
-  const y = Math.round(cy - rect.top);
-
-  const nx = (x / rect.width).toFixed(3);
-  const ny = (y / rect.height).toFixed(3);
-
-  clickMsg.innerHTML =
-    `Clicked at x=${x}, y=${y} &nbsp; | &nbsp; normalized (${nx}, ${ny})`;
-}
-
-imgPreview.addEventListener("click", handleClick);
-imgPreview.addEventListener("touchstart", handleClick, {passive:true});
+  // init
+  setCurrent(null);
 </script>
 
 </body>
