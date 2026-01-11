@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MK EasyHand App</title>
+  <title>MK EasyHand – Standard</title>
 
   <!-- OCR -->
   <script src="https://unpkg.com/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
@@ -22,7 +22,7 @@
     .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-top:12px}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     label{font-size:13px;color:var(--muted)}
-    select,input[type="file"],input[type="text"],input[type="number"]{
+    select,input[type="file"],input[type="text"]{
       padding:9px 10px;border:1px solid var(--bd);border-radius:12px;background:#fff;font:inherit
     }
     button{
@@ -41,7 +41,7 @@
     .small{font-size:12px;color:var(--muted)}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 
-    .grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+    .grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}
     @media(max-width:980px){.grid2{grid-template-columns:1fr}}
 
     .imgBox{border:1px solid var(--bd);border-radius:14px;overflow:hidden;background:#fff}
@@ -53,65 +53,63 @@
     td input{width:100%;padding:7px 8px;border-radius:10px;border:1px solid var(--bd)}
     textarea{width:100%;min-height:110px;border:1px solid var(--bd);border-radius:12px;padding:10px;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 
-    details{margin-top:10px}
-    summary{cursor:pointer;color:var(--muted);font-size:13px}
     .hint{border:1px dashed var(--bd);border-radius:12px;padding:10px;background:#fff;color:var(--muted);margin-top:10px}
   </style>
 </head>
 
 <body>
 <header>
-  <h1>MK EasyHand App</h1>
-  <div class="sub">MYFIGB (FIGB) OCR: Paste/Upload → click a suit icon (♠♥♦♣) → OCR that hand → repeat for N/E/S/W → Generate LIN/PBN → Open Solver/BBO</div>
+  <h1>MK EasyHand – Standard</h1>
+  <div class="sub">Flusso unico: Paste/Upload → scegli Seat (N/E/S/W) → clicca sulla ♠ della mano → OCR → ripeti per 4 mani → Generate LIN/PBN → Solver/BBO. Se OCR sbaglia: correggi a mano.</div>
 </header>
 
 <div class="wrap">
 
   <div class="card">
     <div class="row">
-      <label><b>Source</b></label>
-      <select id="sourceSel">
-        <option value="C" selected>C — Federation / Local (MYFIGB)</option>
-        <option value="B">B — BBO (manual table for now)</option>
-        <option value="A">A — RealBridge (manual table for now)</option>
-        <option value="D">D — Bulletin (manual table for now)</option>
-      </select>
-
       <button id="pasteBtn">📋 Paste</button>
       <input type="file" id="fileInput" accept="image/*" />
 
-      <span class="pill" id="imgPill">Image: <span id="imgState" class="bad">not loaded</span></span>
+      <label><b>Seat</b></label>
+      <select id="seatSel">
+        <option value="N">North</option>
+        <option value="E">East</option>
+        <option value="S">South</option>
+        <option value="W">West</option>
+      </select>
+
+      <span class="pill">Image: <span id="imgState" class="bad">not loaded</span></span>
       <span class="pill">Hands: <span id="filled" class="mono">N ☐ E ☐ S ☐ W ☐</span></span>
       <span class="pill">Validation: <span id="valState" class="bad">KO ✖</span></span>
 
-      <button id="ocrBtn" class="green" disabled>🔎 OCR from click</button>
+      <button id="ocrBtn" class="green" disabled>🔎 OCR (from ♠ click)</button>
       <button id="genBtn" class="dark">Generate LIN / PBN</button>
       <button id="clearBtn" class="red">Clear</button>
     </div>
 
     <div class="hint">
-      <b>How to use (MYFIGB):</b> paste/upload → click directly on a colored suit icon (prefer ♣ or ♦) next to the hand →
-      press <b>OCR from click</b>. Repeat for the other three hands. When all four are filled, validation turns green.
-      <br><b>Tip:</b> If GitHub Pages shows an old version, hard-refresh (Ctrl+F5) or add <span class="mono">?v=999</span> to URL.
+      <b>Regola standard:</b> clicca SEMPRE sulla <b>♠</b> (picche) della mano che vuoi leggere.
+      L’app leggerà automaticamente anche ♥ ♦ ♣ sotto.
+      <br><b>Nota:</b> alcuni formati “FIGB allungati” possono dare errori: in quel caso correggi manualmente in tabella.
     </div>
   </div>
 
   <div class="grid2">
     <div class="card">
-      <div class="small"><b>Image</b> (click a suit icon to set the anchor)</div>
+      <div class="small"><b>Immagine</b> (clicca sulla ♠ della mano scelta)</div>
       <div class="imgBox" style="margin-top:8px">
         <img id="imgPreview" alt="preview" />
       </div>
       <div id="clickMsg" class="small mono" style="margin-top:8px">No click yet.</div>
 
-      <details>
-        <summary>Debug (optional)</summary>
+      <details style="margin-top:10px">
+        <summary class="small">Debug (opzionale)</summary>
         <textarea id="debug" readonly></textarea>
       </details>
     </div>
 
     <div class="card">
-      <div class="small"><b>Hand table (52 cards)</b> — only cards, nothing else</div>
+      <div class="small"><b>Tabella mano (52 carte)</b> — solo carte</div>
 
       <div style="overflow:auto;margin-top:10px">
         <table>
@@ -158,7 +156,7 @@
       </div>
 
       <div class="small" style="margin-top:8px">
-        Allowed ranks: <span class="mono">AKQJT98765432</span> (10 or T). Spaces ignored.
+        Allowed ranks: <span class="mono">AKQJT98765432</span> (10 or T). Spazi ignorati.
       </div>
 
       <div class="small" style="margin-top:10px"><b>LIN output</b></div>
@@ -178,17 +176,13 @@
 </div>
 
 <script>
-/* =========================
-   State / DOM
-========================= */
 const $ = (id)=>document.getElementById(id);
 
-const sourceSel = $("sourceSel");
 const pasteBtn = $("pasteBtn");
 const fileInput = $("fileInput");
+const seatSel = $("seatSel");
 const imgPreview = $("imgPreview");
 const imgState = $("imgState");
-const imgPill = $("imgPill");
 const clickMsg = $("clickMsg");
 const debugBox = $("debug");
 const ocrBtn = $("ocrBtn");
@@ -211,12 +205,12 @@ const table = {
   W:{S:$("W_S"),H:$("W_H"),D:$("W_D"),C:$("W_C")},
 };
 
-let img = null;             // HTMLImageElement
+let img = null;
 let imgW = 0, imgH = 0;
 let canvas = document.createElement("canvas");
 let ctx = canvas.getContext("2d", { willReadFrequently:true });
-let lastClick = null;       // {x,y,nx,ny}
-let anchor = null;          // {seat, suit, x,y}
+
+let anchor = null; // {x,y} click on ♠ icon
 let filledSeats = {N:false,E:false,S:false,W:false};
 
 function setDebug(txt){ debugBox.value = txt || ""; }
@@ -229,42 +223,6 @@ function setImageLoaded(ok){
   ocrBtn.disabled = !ok;
 }
 
-function normRanks(s){
-  if(!s) return "";
-  let t = String(s).toUpperCase().replace(/\s+/g,"");
-  t = t.replace(/10/g,"T");
-  t = t.replace(/[^AKQJT98765432]/g,"");
-  return t;
-}
-
-function inferSeatFromPoint(nx, ny){
-  // MYFIGB cross layout: top=N, bottom=S, left=W, right=E
-  if(ny < 0.33) return "N";
-  if(ny > 0.67) return "S";
-  if(nx < 0.5) return "W";
-  return "E";
-}
-
-// Color-based suit inference (MYFIGB): ♠ blue, ♥ red, ♦ orange, ♣ green
-function inferSuitFromColor(x,y){
-  const r = 6;
-  let R=0,G=0,B=0,n=0;
-  for(let yy=y-r; yy<=y+r; yy++){
-    for(let xx=x-r; xx<=x+r; xx++){
-      if(xx<0||yy<0||xx>=imgW||yy>=imgH) continue;
-      const d = ctx.getImageData(xx,yy,1,1).data;
-      R += d[0]; G += d[1]; B += d[2]; n++;
-    }
-  }
-  R/=n; G/=n; B/=n;
-
-  // heuristics
-  if(R > G + 40 && R > B + 40) return "H";
-  if(G > R + 30 && G > B + 30) return "C";
-  if(R > 140 && G > 90 && B < 130) return "D";
-  return "S";
-}
-
 function refreshFilledUI(){
   const m = (s)=> filledSeats[s] ? "✓" : "☐";
   filled.textContent = `N ${m("N")} E ${m("E")} S ${m("S")} W ${m("W")}`;
@@ -275,9 +233,14 @@ function setValidationBadge(ok){
   valState.className = ok ? "ok" : "bad";
 }
 
-/* =========================
-   Load image
-========================= */
+function normRanks(s){
+  if(!s) return "";
+  let t = String(s).toUpperCase().replace(/\s+/g,"");
+  t = t.replace(/10/g,"T");
+  t = t.replace(/[^AKQJT98765432]/g,"");
+  return t;
+}
+
 function drawToCanvas(){
   if(!img) return;
   canvas.width = imgW; canvas.height = imgH;
@@ -298,9 +261,8 @@ async function loadFromBlob(blob){
       drawToCanvas();
       setDebug("");
       appendDebug(`Loaded image: ${imgW}x${imgH}`);
-      clickMsg.textContent = "Click a suit icon (♠/♥/♦/♣) near a hand.";
+      clickMsg.textContent = "Clicca sulla ♠ della mano selezionata.";
       anchor = null;
-      lastClick = null;
       resolve();
       URL.revokeObjectURL(url);
     };
@@ -312,7 +274,7 @@ async function loadFromBlob(blob){
 pasteBtn.addEventListener("click", async ()=>{
   try{
     if(!navigator.clipboard || !navigator.clipboard.read){
-      alert("Paste not supported in this browser. Use Upload.");
+      alert("Paste non supportato: usa Upload.");
       return;
     }
     const items = await navigator.clipboard.read();
@@ -324,9 +286,9 @@ pasteBtn.addEventListener("click", async ()=>{
         return;
       }
     }
-    alert("No image in clipboard. Take a screenshot first.");
+    alert("Nessuna immagine negli appunti.");
   }catch(e){
-    alert("Paste failed. Use Upload.\n\n" + e);
+    alert("Paste fallito. Usa Upload.\n\n" + e);
   }
 });
 
@@ -345,30 +307,14 @@ imgPreview.addEventListener("click", (ev)=>{
   const x = Math.max(0, Math.min(imgW-1, Math.round(nx * imgW)));
   const y = Math.max(0, Math.min(imgH-1, Math.round(ny * imgH)));
 
-  drawToCanvas();
-
-  const seat = inferSeatFromPoint(nx, ny);
-  const suit = inferSuitFromColor(x,y);
-
-  anchor = {seat, suit, x, y};
-  lastClick = {x,y,nx,ny};
-
-  clickMsg.textContent = `Clicked x=${x}, y=${y} | norm(${nx.toFixed(3)}, ${ny.toFixed(3)}) | seat=${seat} | suit=${suit}`;
-  appendDebug(`Anchor: seat=${seat} suit=${suit} x=${x} y=${y}`);
+  anchor = {x,y};
+  clickMsg.textContent = `Anchor set (♠ click) at x=${x}, y=${y} | norm(${nx.toFixed(3)}, ${ny.toFixed(3)}) | seat=${seatSel.value}`;
+  appendDebug(`Anchor: x=${x} y=${y} seat=${seatSel.value}`);
 });
 
-/* =========================
-   OCR: robust one-hand extraction
-   - we read 4 lines using adaptive dy candidates
-   - we start at clicked suit row index and back-calculate Spades row
-========================= */
 const WHITELIST = "AKQJT9876543210";
-function suitIndex(s){
-  return s==="S"?0 : s==="H"?1 : s==="D"?2 : 3;
-}
 
 function cropLine(x, y, w, h){
-  // clamp
   let xx = Math.max(0, Math.min(imgW-2, Math.round(x)));
   let yy = Math.max(0, Math.min(imgH-2, Math.round(y)));
   let ww = Math.max(1, Math.min(imgW-xx, Math.round(w)));
@@ -379,7 +325,7 @@ function cropLine(x, y, w, h){
   const cctx = c.getContext("2d", { willReadFrequently:true });
   cctx.drawImage(canvas, xx, yy, ww, hh, 0,0, ww,hh);
 
-  // threshold for OCR
+  // threshold
   const id = cctx.getImageData(0,0,ww,hh);
   const d = id.data;
   for(let i=0;i<d.length;i+=4){
@@ -391,8 +337,8 @@ function cropLine(x, y, w, h){
   return c;
 }
 
-async function ocrLine(canvasLine){
-  const res = await Tesseract.recognize(canvasLine, "eng", {
+async function ocrLine(lineCanvas){
+  const res = await Tesseract.recognize(lineCanvas, "eng", {
     tessedit_char_whitelist: WHITELIST,
     preserve_interword_spaces: "0",
   });
@@ -400,46 +346,45 @@ async function ocrLine(canvasLine){
   return normRanks(raw);
 }
 
-async function ocrHandFromAnchor(){
-  if(!anchor) throw new Error("Click a suit icon first.");
+async function ocrHandFromSpadeClick(){
+  if(!anchor) throw new Error("Prima clicca sulla ♠ della mano selezionata.");
+  const seat = seatSel.value;
 
-  const {seat, suit, x, y} = anchor;
-  const idx = suitIndex(suit);
+  const {x,y} = anchor;
 
-  // geometry guesses (relative)
-  const iconW = Math.max(18, Math.round(imgW * 0.03));     // icon width
-  const xText = x + Math.round(iconW * 1.2);               // to the right of icon
-  const wText = Math.round(imgW * 0.26);                   // long enough for AQT987...
-  const lineH = Math.max(26, Math.round(imgH * 0.045));    // line height
+  // geometry guesses
+  const iconW = Math.max(18, Math.round(imgW * 0.03));
+  const xText = x + Math.round(iconW * 1.15);
+  const wText = Math.round(imgW * 0.28);
+  const lineH = Math.max(26, Math.round(imgH * 0.045));
 
-  // candidate vertical spacings between suit lines
-  const dyCandidates = [0.030,0.034,0.038,0.042,0.046].map(k=>Math.round(imgH*k));
+  // dy candidates (distance between ♠ and ♥ etc.)
+  const dyCandidates = [0.028,0.032,0.036,0.040,0.044,0.048].map(k=>Math.round(imgH*k));
 
-  appendDebug(`OCR: seat=${seat} clickedSuit=${suit} idx=${idx} xText=${xText} wText=${wText} lineH=${lineH}`);
+  appendDebug(`OCR seat=${seat} xText=${xText} wText=${wText} lineH=${lineH}`);
 
   let best = null;
   for(const dy of dyCandidates){
-    const ySpade = y - idx*dy; // back to spades line center
-    const suits = ["S","H","D","C"];
     const out = {S:"",H:"",D:"",C:""};
+    const yTopS = y - (lineH*0.60);
+    const suits = ["S","H","D","C"];
     let score = 0;
 
     for(let i=0;i<4;i++){
-      const yLineTop = (ySpade + i*dy) - (lineH*0.60);
+      const yLineTop = yTopS + i*dy;
       const c = cropLine(xText, yLineTop, wText, lineH);
       const txt = await ocrLine(c);
       out[suits[i]] = txt;
       score += txt.length;
     }
 
-    // scoring: want close to 13 total, plus non-crazy per suit
     const total = out.S.length + out.H.length + out.D.length + out.C.length;
     const perOk = [out.S,out.H,out.D,out.C].every(v=>v.length<=13);
     const closeness = 20 - Math.min(20, Math.abs(13 - total));
     const bonus = perOk ? 8 : 0;
     const totalScore = score + closeness + bonus;
 
-    appendDebug(`dy=${dy} => S=${out.S} H=${out.H} D=${out.D} C=${out.C} | total=${total} score=${totalScore}`);
+    appendDebug(`dy=${dy} => S=${out.S} H=${out.H} D=${out.D} C=${out.C} total=${total} score=${totalScore}`);
 
     if(!best || totalScore > best.totalScore){
       best = {dy, out, total, totalScore};
@@ -448,17 +393,15 @@ async function ocrHandFromAnchor(){
 
   appendDebug(`BEST dy=${best.dy} total=${best.total} S=${best.out.S} H=${best.out.H} D=${best.out.D} C=${best.out.C}`);
 
-  // write into table
-  for(const su of ["S","H","D","C"]){
-    table[seat][su].value = best.out[su] || "";
-  }
-  filledSeats[seat] = (best.total === 13); // mark ✓ only if exactly 13 read
+  table[seat].S.value = best.out.S || "";
+  table[seat].H.value = best.out.H || "";
+  table[seat].D.value = best.out.D || "";
+  table[seat].C.value = best.out.C || "";
+
+  filledSeats[seat] = (best.total === 13);
   refreshFilledUI();
 }
 
-/* =========================
-   Generate outputs
-========================= */
 function readHands(){
   const hands = {};
   for(const seat of ["N","E","S","W"]){
@@ -484,9 +427,9 @@ function validateHands(h){
   for(const seat of ["N","E","S","W"]){
     counts[seat] = h[seat].S.length + h[seat].H.length + h[seat].D.length + h[seat].C.length;
     counts.total += counts[seat];
-    if(counts[seat] !== 13) errs.push(`Seat ${seat}: ${counts[seat]} cards (expected 13)`);
+    if(counts[seat] !== 13) errs.push(`Seat ${seat}: ${counts[seat]} carte (attese 13)`);
   }
-  if(counts.total !== 52) errs.push(`Total cards: ${counts.total} (expected 52)`);
+  if(counts.total !== 52) errs.push(`Totale carte: ${counts.total} (attese 52)`);
 
   for(const seat of ["N","E","S","W"]){
     for(const suit of ["S","H","D","C"]){
@@ -497,7 +440,7 @@ function validateHands(h){
     }
   }
   const dups = [...seen.entries()].filter(([k,v])=>v>1).map(([k,v])=>`${k}×${v}`);
-  if(dups.length) errs.push(`Duplicates: ${dups.slice(0,30).join(", ")}${dups.length>30?" ...":""}`);
+  if(dups.length) errs.push(`Duplicati: ${dups.slice(0,30).join(", ")}${dups.length>30?" ...":""}`);
 
   return {ok: errs.length===0, errs, counts};
 }
@@ -518,7 +461,6 @@ function makePBN(h){
 
 function makeLIN(h){
   const bd = 1;
-  // md order used in earlier working tests: N,W,E,S
   const N = `${h.N.S}${h.N.H}${h.N.D}${h.N.C}`;
   const E = `${h.E.S}${h.E.H}${h.E.D}${h.E.C}`;
   const S = `${h.S.S}${h.S.H}${h.S.D}${h.S.C}`;
@@ -542,8 +484,7 @@ function updateOutputs(){
   linOut.value = lin;
   pbnOut.value = pbn;
 
-  // URLs (FIXED): Solver != BBO
-  // Bridge Solver (ddummy) with S.H.D.C dotted format:
+  // Bridge Solver Online (ddummy)
   const baseSolver = "https://dds.bridgewebs.com/bsol2/ddummy.htm";
   const params = new URLSearchParams({
     board: "1",
@@ -562,16 +503,12 @@ function updateOutputs(){
   openBBOBtn.onclick = ()=> window.open(bboBase + "?lin=" + encodeURIComponent(lin), "_blank", "noopener");
 }
 
-/* =========================
-   UI events
-========================= */
 ocrBtn.addEventListener("click", async ()=>{
-  if(!img){ alert("Paste or upload an image first."); return; }
-  if(!anchor){ alert("Click a suit icon first."); return; }
+  if(!img){ alert("Paste o Upload prima."); return; }
+  if(!anchor){ alert("Clicca sulla ♠ della mano selezionata."); return; }
   ocrBtn.disabled = true;
   try{
-    await ocrHandFromAnchor();
-    setValidationBadge(false); // until all filled
+    await ocrHandFromSpadeClick();
   }catch(e){
     appendDebug("OCR ERROR: " + (e?.message||String(e)));
     alert("OCR error: " + e);
@@ -580,9 +517,7 @@ ocrBtn.addEventListener("click", async ()=>{
   }
 });
 
-genBtn.addEventListener("click", ()=>{
-  updateOutputs();
-});
+genBtn.addEventListener("click", updateOutputs);
 
 clearBtn.addEventListener("click", ()=>{
   for(const seat of ["N","E","S","W"]){
@@ -594,8 +529,8 @@ clearBtn.addEventListener("click", ()=>{
   refreshFilledUI();
   setValidationBadge(false);
   setDebug("");
-  linOut.value = "(will appear here)";
-  pbnOut.value = "(will appear here)";
+  linOut.value="(will appear here)";
+  pbnOut.value="(will appear here)";
   clickMsg.textContent = "No click yet.";
   anchor = null;
 });
@@ -605,7 +540,7 @@ copyLinBtn.addEventListener("click", async ()=>{
   if(!t || t.includes("will appear")) return;
   try{
     await navigator.clipboard.writeText(t);
-    appendDebug("LIN copied ✅");
+    appendDebug("LIN copiato ✅");
   }catch(e){
     alert("Copy failed.");
   }
@@ -623,11 +558,9 @@ dlLinBtn.addEventListener("click", ()=>{
   a.remove();
 });
 
-/* Manual edits revalidate quickly */
 for(const seat of ["N","E","S","W"]){
   for(const su of ["S","H","D","C"]){
     table[seat][su].addEventListener("input", ()=>{
-      // mark seat as filled only if 13 cards
       const tmp = {
         S: normRanks(table[seat].S.value),
         H: normRanks(table[seat].H.value),
@@ -641,7 +574,6 @@ for(const seat of ["N","E","S","W"]){
   }
 }
 
-/* init */
 setImageLoaded(false);
 refreshFilledUI();
 setValidationBadge(false);
