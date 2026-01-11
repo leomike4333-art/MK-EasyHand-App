@@ -1,126 +1,653 @@
-<!DOCTYPE html>
-<html lang="it">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>MK-EasyHand-App</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MK EasyHand App</title>
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f4f4f4;
-  margin: 0;
-  padding: 12px;
-}
-h1 { font-size: 20px; margin-bottom: 8px; }
-.panel {
-  background: white;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 12px;
-}
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-select, button {
-  padding: 6px 10px;
-  font-size: 14px;
-}
-button {
-  cursor: pointer;
-}
-#imgPreview {
-  max-width: 100%;
-  border: 1px solid #ccc;
-  margin-top: 8px;
-  display: none;
-}
-.muted { color: #666; font-size: 13px; }
-.success { color: green; }
-.warn { color: darkorange; }
-</style>
+  <!-- OCR -->
+  <script src="https://unpkg.com/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --bd:#e5e7eb; --txt:#111827; --muted:#6b7280;
+      --ok:#16a34a; --bad:#dc2626; --blue:#2563eb; --dark:#111827;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--txt)}
+    header{background:#fff;border-bottom:1px solid var(--bd);padding:12px 16px}
+    h1{margin:0;font-size:22px;font-weight:900}
+    .sub{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.3}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px 16px 24px}
+    .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-top:12px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    label{font-size:13px;color:var(--muted)}
+    select,input[type="file"],input[type="text"],input[type="number"]{
+      padding:9px 10px;border:1px solid var(--bd);border-radius:12px;background:#fff;font:inherit
+    }
+    button{
+      border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer;
+      color:#fff;background:var(--blue);display:inline-flex;gap:8px;align-items:center
+    }
+    button.dark{background:var(--dark)}
+    button.gray{background:#4b5563}
+    button.green{background:var(--ok)}
+    button.red{background:var(--bad)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:7px 10px;border:1px solid var(--bd);border-radius:999px;background:#fff;font-weight:800}
+    .ok{color:var(--ok)}
+    .bad{color:var(--bad)}
+    .small{font-size:12px;color:var(--muted)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+    .grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+    @media(max-width:980px){.grid2{grid-template-columns:1fr}}
+
+    .imgBox{border:1px solid var(--bd);border-radius:14px;overflow:hidden;background:#fff}
+    #imgPreview{display:none;width:100%;height:auto;cursor:crosshair}
+
+    table{border-collapse:collapse;width:100%;background:#fff;border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+    th,td{border:1px solid var(--bd);padding:8px 10px;font-size:14px}
+    th{background:#f3f4f6;text-align:left}
+    td input{width:100%;padding:7px 8px;border-radius:10px;border:1px solid var(--bd)}
+    textarea{width:100%;min-height:110px;border:1px solid var(--bd);border-radius:12px;padding:10px;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+    details{margin-top:10px}
+    summary{cursor:pointer;color:var(--muted);font-size:13px}
+    .hint{border:1px dashed var(--bd);border-radius:12px;padding:10px;background:#fff;color:var(--muted);margin-top:10px}
+  </style>
 </head>
 
 <body>
+<header>
+  <h1>MK EasyHand App</h1>
+  <div class="sub">MYFIGB (FIGB) OCR: Paste/Upload → click a suit icon (♠♥♦♣) → OCR that hand → repeat for N/E/S/W → Generate LIN/PBN → Open Solver/BBO</div>
+</header>
 
-<h1>MK-EasyHand-App</h1>
-<div class="muted">Screenshot → Analisi mano (Bridge Solver / BBO)</div>
+<div class="wrap">
 
-<div class="panel">
-  <div class="row">
-    <label><b>Source:</b></label>
-    <select id="source">
-      <option>A – RealBridge</option>
-      <option>B – BBO</option>
-      <option>C – Federation / Local</option>
-      <option>D – LoveBridge (WBF)</option>
-      <option>E – Bulletin (ACBL / EBL / WBF)</option>
-    </select>
+  <div class="card">
+    <div class="row">
+      <label><b>Source</b></label>
+      <select id="sourceSel">
+        <option value="C" selected>C — Federation / Local (MYFIGB)</option>
+        <option value="B">B — BBO (manual table for now)</option>
+        <option value="A">A — RealBridge (manual table for now)</option>
+        <option value="D">D — Bulletin (manual table for now)</option>
+      </select>
 
-    <button id="pasteBtn">📋 Incolla</button>
+      <button id="pasteBtn">📋 Paste</button>
+      <input type="file" id="fileInput" accept="image/*" />
 
-    <label for="fileInput" class="muted">oppure</label>
-    <input type="file" id="fileInput" accept="image/*">
+      <span class="pill" id="imgPill">Image: <span id="imgState" class="bad">not loaded</span></span>
+      <span class="pill">Hands: <span id="filled" class="mono">N ☐ E ☐ S ☐ W ☐</span></span>
+      <span class="pill">Validation: <span id="valState" class="bad">KO ✖</span></span>
+
+      <button id="ocrBtn" class="green" disabled>🔎 OCR from click</button>
+      <button id="genBtn" class="dark">Generate LIN / PBN</button>
+      <button id="clearBtn" class="red">Clear</button>
+    </div>
+
+    <div class="hint">
+      <b>How to use (MYFIGB):</b> paste/upload → click directly on a colored suit icon (prefer ♣ or ♦) next to the hand →
+      press <b>OCR from click</b>. Repeat for the other three hands. When all four are filled, validation turns green.
+      <br><b>Tip:</b> If GitHub Pages shows an old version, hard-refresh (Ctrl+F5) or add <span class="mono">?v=999</span> to URL.
+    </div>
   </div>
 
-  <div id="pasteStatus" class="muted"></div>
-  <img id="imgPreview">
-</div>
+  <div class="grid2">
+    <div class="card">
+      <div class="small"><b>Image</b> (click a suit icon to set the anchor)</div>
+      <div class="imgBox" style="margin-top:8px">
+        <img id="imgPreview" alt="preview" />
+      </div>
+      <div id="clickMsg" class="small mono" style="margin-top:8px">No click yet.</div>
 
-<div class="panel">
-  <b>Stato:</b>
-  <div id="status" class="muted">In attesa di immagine…</div>
+      <details>
+        <summary>Debug (optional)</summary>
+        <textarea id="debug" readonly></textarea>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="small"><b>Hand table (52 cards)</b> — only cards, nothing else</div>
+
+      <div style="overflow:auto;margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Seat</th>
+              <th>♠</th>
+              <th>♥</th>
+              <th>♦</th>
+              <th>♣</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>North</b></td>
+              <td><input id="N_S" class="mono" placeholder="AKQJ" /></td>
+              <td><input id="N_H" class="mono" placeholder="T987" /></td>
+              <td><input id="N_D" class="mono" placeholder="642" /></td>
+              <td><input id="N_C" class="mono" placeholder="A73" /></td>
+            </tr>
+            <tr>
+              <td><b>East</b></td>
+              <td><input id="E_S" class="mono" /></td>
+              <td><input id="E_H" class="mono" /></td>
+              <td><input id="E_D" class="mono" /></td>
+              <td><input id="E_C" class="mono" /></td>
+            </tr>
+            <tr>
+              <td><b>South</b></td>
+              <td><input id="S_S" class="mono" /></td>
+              <td><input id="S_H" class="mono" /></td>
+              <td><input id="S_D" class="mono" /></td>
+              <td><input id="S_C" class="mono" /></td>
+            </tr>
+            <tr>
+              <td><b>West</b></td>
+              <td><input id="W_S" class="mono" /></td>
+              <td><input id="W_H" class="mono" /></td>
+              <td><input id="W_D" class="mono" /></td>
+              <td><input id="W_C" class="mono" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="small" style="margin-top:8px">
+        Allowed ranks: <span class="mono">AKQJT98765432</span> (10 or T). Spaces ignored.
+      </div>
+
+      <div class="small" style="margin-top:10px"><b>LIN output</b></div>
+      <textarea id="linOut" readonly>(will appear here)</textarea>
+
+      <div class="small" style="margin-top:10px"><b>PBN output</b></div>
+      <textarea id="pbnOut" readonly>(will appear here)</textarea>
+
+      <div class="row" style="margin-top:10px">
+        <button id="copyLin" class="gray">Copy LIN</button>
+        <button id="dlLin" class="dark">Download .lin</button>
+        <button id="openBSOL" class="dark">Open Bridge Solver Online</button>
+        <button id="openBBO" class="dark">Open BBO Handviewer</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-const pasteBtn = document.getElementById("pasteBtn");
-const pasteStatus = document.getElementById("pasteStatus");
-const imgPreview = document.getElementById("imgPreview");
-const statusBox = document.getElementById("status");
-const fileInput = document.getElementById("fileInput");
+/* =========================
+   State / DOM
+========================= */
+const $ = (id)=>document.getElementById(id);
 
-function handleImage(blob, fromClipboard=false) {
-  const url = URL.createObjectURL(blob);
-  imgPreview.src = url;
-  imgPreview.style.display = "block";
-  statusBox.innerHTML = "Immagine caricata ✅<br>Pronta per estrazione mano.";
-  pasteStatus.innerHTML = fromClipboard
-    ? "<span class='success'>Screenshot incollato dagli appunti</span>"
-    : "";
+const sourceSel = $("sourceSel");
+const pasteBtn = $("pasteBtn");
+const fileInput = $("fileInput");
+const imgPreview = $("imgPreview");
+const imgState = $("imgState");
+const imgPill = $("imgPill");
+const clickMsg = $("clickMsg");
+const debugBox = $("debug");
+const ocrBtn = $("ocrBtn");
+const genBtn = $("genBtn");
+const clearBtn = $("clearBtn");
+const valState = $("valState");
+const filled = $("filled");
+const linOut = $("linOut");
+const pbnOut = $("pbnOut");
+
+const copyLinBtn = $("copyLin");
+const dlLinBtn = $("dlLin");
+const openBSOLBtn = $("openBSOL");
+const openBBOBtn = $("openBBO");
+
+const table = {
+  N:{S:$("N_S"),H:$("N_H"),D:$("N_D"),C:$("N_C")},
+  E:{S:$("E_S"),H:$("E_H"),D:$("E_D"),C:$("E_C")},
+  S:{S:$("S_S"),H:$("S_H"),D:$("S_D"),C:$("S_C")},
+  W:{S:$("W_S"),H:$("W_H"),D:$("W_D"),C:$("W_C")},
+};
+
+let img = null;             // HTMLImageElement
+let imgW = 0, imgH = 0;
+let canvas = document.createElement("canvas");
+let ctx = canvas.getContext("2d", { willReadFrequently:true });
+let lastClick = null;       // {x,y,nx,ny}
+let anchor = null;          // {seat, suit, x,y}
+let filledSeats = {N:false,E:false,S:false,W:false};
+
+function setDebug(txt){ debugBox.value = txt || ""; }
+function appendDebug(txt){ debugBox.value += (debugBox.value? "\n":"") + txt; debugBox.scrollTop = debugBox.scrollHeight; }
+
+function setImageLoaded(ok){
+  imgState.textContent = ok ? "loaded ✓" : "not loaded";
+  imgState.className = ok ? "ok" : "bad";
+  imgPreview.style.display = ok ? "block" : "none";
+  ocrBtn.disabled = !ok;
 }
 
-pasteBtn.addEventListener("click", async () => {
-  pasteStatus.textContent = "";
-  if (!navigator.clipboard || !navigator.clipboard.read) {
-    pasteStatus.innerHTML = "<span class='warn'>Incolla non supportato qui. Usa Carica file.</span>";
-    return;
+function normRanks(s){
+  if(!s) return "";
+  let t = String(s).toUpperCase().replace(/\s+/g,"");
+  t = t.replace(/10/g,"T");
+  t = t.replace(/[^AKQJT98765432]/g,"");
+  return t;
+}
+
+function inferSeatFromPoint(nx, ny){
+  // MYFIGB cross layout: top=N, bottom=S, left=W, right=E
+  if(ny < 0.33) return "N";
+  if(ny > 0.67) return "S";
+  if(nx < 0.5) return "W";
+  return "E";
+}
+
+// Color-based suit inference (MYFIGB): ♠ blue, ♥ red, ♦ orange, ♣ green
+function inferSuitFromColor(x,y){
+  const r = 6;
+  let R=0,G=0,B=0,n=0;
+  for(let yy=y-r; yy<=y+r; yy++){
+    for(let xx=x-r; xx<=x+r; xx++){
+      if(xx<0||yy<0||xx>=imgW||yy>=imgH) continue;
+      const d = ctx.getImageData(xx,yy,1,1).data;
+      R += d[0]; G += d[1]; B += d[2]; n++;
+    }
   }
-  try {
+  R/=n; G/=n; B/=n;
+
+  // heuristics
+  if(R > G + 40 && R > B + 40) return "H";
+  if(G > R + 30 && G > B + 30) return "C";
+  if(R > 140 && G > 90 && B < 130) return "D";
+  return "S";
+}
+
+function refreshFilledUI(){
+  const m = (s)=> filledSeats[s] ? "✓" : "☐";
+  filled.textContent = `N ${m("N")} E ${m("E")} S ${m("S")} W ${m("W")}`;
+}
+
+function setValidationBadge(ok){
+  valState.textContent = ok ? "OK ✔" : "KO ✖";
+  valState.className = ok ? "ok" : "bad";
+}
+
+/* =========================
+   Load image
+========================= */
+function drawToCanvas(){
+  if(!img) return;
+  canvas.width = imgW; canvas.height = imgH;
+  ctx.clearRect(0,0,imgW,imgH);
+  ctx.drawImage(img,0,0);
+}
+
+async function loadFromBlob(blob){
+  const url = URL.createObjectURL(blob);
+  return new Promise((resolve,reject)=>{
+    const im = new Image();
+    im.onload = ()=>{
+      img = im;
+      imgW = im.naturalWidth || im.width;
+      imgH = im.naturalHeight || im.height;
+      imgPreview.src = url;
+      setImageLoaded(true);
+      drawToCanvas();
+      setDebug("");
+      appendDebug(`Loaded image: ${imgW}x${imgH}`);
+      clickMsg.textContent = "Click a suit icon (♠/♥/♦/♣) near a hand.";
+      anchor = null;
+      lastClick = null;
+      resolve();
+      URL.revokeObjectURL(url);
+    };
+    im.onerror = reject;
+    im.src = url;
+  });
+}
+
+pasteBtn.addEventListener("click", async ()=>{
+  try{
+    if(!navigator.clipboard || !navigator.clipboard.read){
+      alert("Paste not supported in this browser. Use Upload.");
+      return;
+    }
     const items = await navigator.clipboard.read();
-    for (const item of items) {
-      const type = item.types.find(t => t.startsWith("image/"));
-      if (type) {
-        const blob = await item.getType(type);
-        handleImage(blob, true);
+    for(const it of items){
+      const t = it.types.find(x=>x.startsWith("image/"));
+      if(t){
+        const blob = await it.getType(t);
+        await loadFromBlob(blob);
         return;
       }
     }
-    pasteStatus.innerHTML = "<span class='warn'>Nessuna immagine negli appunti.</span>";
-  } catch (err) {
-    pasteStatus.innerHTML = "<span class='warn'>Permesso negato o HTTPS richiesto.</span>";
-    console.error(err);
+    alert("No image in clipboard. Take a screenshot first.");
+  }catch(e){
+    alert("Paste failed. Use Upload.\n\n" + e);
   }
 });
 
-fileInput.addEventListener("change", () => {
-  if (fileInput.files && fileInput.files[0]) {
-    handleImage(fileInput.files[0], false);
+fileInput.addEventListener("change", async ()=>{
+  const f = fileInput.files && fileInput.files[0];
+  if(!f) return;
+  await loadFromBlob(f);
+});
+
+imgPreview.addEventListener("click", (ev)=>{
+  if(!img) return;
+  const r = imgPreview.getBoundingClientRect();
+  const nx = (ev.clientX - r.left) / r.width;
+  const ny = (ev.clientY - r.top) / r.height;
+
+  const x = Math.max(0, Math.min(imgW-1, Math.round(nx * imgW)));
+  const y = Math.max(0, Math.min(imgH-1, Math.round(ny * imgH)));
+
+  drawToCanvas();
+
+  const seat = inferSeatFromPoint(nx, ny);
+  const suit = inferSuitFromColor(x,y);
+
+  anchor = {seat, suit, x, y};
+  lastClick = {x,y,nx,ny};
+
+  clickMsg.textContent = `Clicked x=${x}, y=${y} | norm(${nx.toFixed(3)}, ${ny.toFixed(3)}) | seat=${seat} | suit=${suit}`;
+  appendDebug(`Anchor: seat=${seat} suit=${suit} x=${x} y=${y}`);
+});
+
+/* =========================
+   OCR: robust one-hand extraction
+   - we read 4 lines using adaptive dy candidates
+   - we start at clicked suit row index and back-calculate Spades row
+========================= */
+const WHITELIST = "AKQJT9876543210";
+function suitIndex(s){
+  return s==="S"?0 : s==="H"?1 : s==="D"?2 : 3;
+}
+
+function cropLine(x, y, w, h){
+  // clamp
+  let xx = Math.max(0, Math.min(imgW-2, Math.round(x)));
+  let yy = Math.max(0, Math.min(imgH-2, Math.round(y)));
+  let ww = Math.max(1, Math.min(imgW-xx, Math.round(w)));
+  let hh = Math.max(1, Math.min(imgH-yy, Math.round(h)));
+
+  const c = document.createElement("canvas");
+  c.width = ww; c.height = hh;
+  const cctx = c.getContext("2d", { willReadFrequently:true });
+  cctx.drawImage(canvas, xx, yy, ww, hh, 0,0, ww,hh);
+
+  // threshold for OCR
+  const id = cctx.getImageData(0,0,ww,hh);
+  const d = id.data;
+  for(let i=0;i<d.length;i+=4){
+    const lum = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+    const v = lum < 175 ? 0 : 255;
+    d[i]=d[i+1]=d[i+2]=v; d[i+3]=255;
+  }
+  cctx.putImageData(id,0,0);
+  return c;
+}
+
+async function ocrLine(canvasLine){
+  const res = await Tesseract.recognize(canvasLine, "eng", {
+    tessedit_char_whitelist: WHITELIST,
+    preserve_interword_spaces: "0",
+  });
+  const raw = (res.data && res.data.text) ? res.data.text : "";
+  return normRanks(raw);
+}
+
+async function ocrHandFromAnchor(){
+  if(!anchor) throw new Error("Click a suit icon first.");
+
+  const {seat, suit, x, y} = anchor;
+  const idx = suitIndex(suit);
+
+  // geometry guesses (relative)
+  const iconW = Math.max(18, Math.round(imgW * 0.03));     // icon width
+  const xText = x + Math.round(iconW * 1.2);               // to the right of icon
+  const wText = Math.round(imgW * 0.26);                   // long enough for AQT987...
+  const lineH = Math.max(26, Math.round(imgH * 0.045));    // line height
+
+  // candidate vertical spacings between suit lines
+  const dyCandidates = [0.030,0.034,0.038,0.042,0.046].map(k=>Math.round(imgH*k));
+
+  appendDebug(`OCR: seat=${seat} clickedSuit=${suit} idx=${idx} xText=${xText} wText=${wText} lineH=${lineH}`);
+
+  let best = null;
+  for(const dy of dyCandidates){
+    const ySpade = y - idx*dy; // back to spades line center
+    const suits = ["S","H","D","C"];
+    const out = {S:"",H:"",D:"",C:""};
+    let score = 0;
+
+    for(let i=0;i<4;i++){
+      const yLineTop = (ySpade + i*dy) - (lineH*0.60);
+      const c = cropLine(xText, yLineTop, wText, lineH);
+      const txt = await ocrLine(c);
+      out[suits[i]] = txt;
+      score += txt.length;
+    }
+
+    // scoring: want close to 13 total, plus non-crazy per suit
+    const total = out.S.length + out.H.length + out.D.length + out.C.length;
+    const perOk = [out.S,out.H,out.D,out.C].every(v=>v.length<=13);
+    const closeness = 20 - Math.min(20, Math.abs(13 - total));
+    const bonus = perOk ? 8 : 0;
+    const totalScore = score + closeness + bonus;
+
+    appendDebug(`dy=${dy} => S=${out.S} H=${out.H} D=${out.D} C=${out.C} | total=${total} score=${totalScore}`);
+
+    if(!best || totalScore > best.totalScore){
+      best = {dy, out, total, totalScore};
+    }
+  }
+
+  appendDebug(`BEST dy=${best.dy} total=${best.total} S=${best.out.S} H=${best.out.H} D=${best.out.D} C=${best.out.C}`);
+
+  // write into table
+  for(const su of ["S","H","D","C"]){
+    table[seat][su].value = best.out[su] || "";
+  }
+  filledSeats[seat] = (best.total === 13); // mark ✓ only if exactly 13 read
+  refreshFilledUI();
+}
+
+/* =========================
+   Generate outputs
+========================= */
+function readHands(){
+  const hands = {};
+  for(const seat of ["N","E","S","W"]){
+    hands[seat] = {
+      S: normRanks(table[seat].S.value),
+      H: normRanks(table[seat].H.value),
+      D: normRanks(table[seat].D.value),
+      C: normRanks(table[seat].C.value),
+    };
+    table[seat].S.value = hands[seat].S;
+    table[seat].H.value = hands[seat].H;
+    table[seat].D.value = hands[seat].D;
+    table[seat].C.value = hands[seat].C;
+  }
+  return hands;
+}
+
+function validateHands(h){
+  const counts = {N:0,E:0,S:0,W:0,total:0};
+  const seen = new Map();
+  const errs = [];
+
+  for(const seat of ["N","E","S","W"]){
+    counts[seat] = h[seat].S.length + h[seat].H.length + h[seat].D.length + h[seat].C.length;
+    counts.total += counts[seat];
+    if(counts[seat] !== 13) errs.push(`Seat ${seat}: ${counts[seat]} cards (expected 13)`);
+  }
+  if(counts.total !== 52) errs.push(`Total cards: ${counts.total} (expected 52)`);
+
+  for(const seat of ["N","E","S","W"]){
+    for(const suit of ["S","H","D","C"]){
+      for(const r of h[seat][suit]){
+        const k = suit+r;
+        seen.set(k, (seen.get(k)||0)+1);
+      }
+    }
+  }
+  const dups = [...seen.entries()].filter(([k,v])=>v>1).map(([k,v])=>`${k}×${v}`);
+  if(dups.length) errs.push(`Duplicates: ${dups.slice(0,30).join(", ")}${dups.length>30?" ...":""}`);
+
+  return {ok: errs.length===0, errs, counts};
+}
+
+function makePBN(h){
+  const N = `${h.N.S}.${h.N.H}.${h.N.D}.${h.N.C}`;
+  const E = `${h.E.S}.${h.E.H}.${h.E.D}.${h.E.C}`;
+  const S = `${h.S.S}.${h.S.H}.${h.S.D}.${h.S.C}`;
+  const W = `${h.W.S}.${h.W.H}.${h.W.D}.${h.W.C}`;
+  return [
+    `[Event "MK EasyHand"]`,
+    `[Dealer "N"]`,
+    `[Vulnerable "None"]`,
+    `[Deal "N:${N} ${E} ${S} ${W}"]`,
+    ``
+  ].join("\n");
+}
+
+function makeLIN(h){
+  const bd = 1;
+  // md order used in earlier working tests: N,W,E,S
+  const N = `${h.N.S}${h.N.H}${h.N.D}${h.N.C}`;
+  const E = `${h.E.S}${h.E.H}${h.E.D}${h.E.C}`;
+  const S = `${h.S.S}${h.S.H}${h.S.D}${h.S.C}`;
+  const W = `${h.W.S}${h.W.H}${h.W.D}${h.W.C}`;
+  return `pn|N,E,S,W|sv|o|bd|${bd}|md|3${N},${W},${E},${S}|`;
+}
+
+function updateOutputs(){
+  const h = readHands();
+  const v = validateHands(h);
+
+  if(v.ok){
+    setValidationBadge(true);
+  }else{
+    setValidationBadge(false);
+    appendDebug("Validation KO:\n- " + v.errs.join("\n- "));
+  }
+
+  const lin = makeLIN(h);
+  const pbn = makePBN(h);
+  linOut.value = lin;
+  pbnOut.value = pbn;
+
+  // URLs (FIXED): Solver != BBO
+  // Bridge Solver (ddummy) with S.H.D.C dotted format:
+  const baseSolver = "https://dds.bridgewebs.com/bsol2/ddummy.htm";
+  const params = new URLSearchParams({
+    board: "1",
+    dealer: "N",
+    vul: "None",
+    north: `${h.N.S}.${h.N.H}.${h.N.D}.${h.N.C}`,
+    east:  `${h.E.S}.${h.E.H}.${h.E.D}.${h.E.C}`,
+    south: `${h.S.S}.${h.S.H}.${h.S.D}.${h.S.C}`,
+    west:  `${h.W.S}.${h.W.H}.${h.W.D}.${h.W.C}`,
+    analyse: "true"
+  });
+  openBSOLBtn.onclick = ()=> window.open(baseSolver + "?" + params.toString(), "_blank", "noopener");
+
+  // BBO handviewer with LIN
+  const bboBase = "https://www.bridgebase.com/tools/handviewer.html";
+  openBBOBtn.onclick = ()=> window.open(bboBase + "?lin=" + encodeURIComponent(lin), "_blank", "noopener");
+}
+
+/* =========================
+   UI events
+========================= */
+ocrBtn.addEventListener("click", async ()=>{
+  if(!img){ alert("Paste or upload an image first."); return; }
+  if(!anchor){ alert("Click a suit icon first."); return; }
+  ocrBtn.disabled = true;
+  try{
+    await ocrHandFromAnchor();
+    setValidationBadge(false); // until all filled
+  }catch(e){
+    appendDebug("OCR ERROR: " + (e?.message||String(e)));
+    alert("OCR error: " + e);
+  }finally{
+    ocrBtn.disabled = false;
   }
 });
+
+genBtn.addEventListener("click", ()=>{
+  updateOutputs();
+});
+
+clearBtn.addEventListener("click", ()=>{
+  for(const seat of ["N","E","S","W"]){
+    for(const su of ["S","H","D","C"]){
+      table[seat][su].value = "";
+    }
+  }
+  filledSeats = {N:false,E:false,S:false,W:false};
+  refreshFilledUI();
+  setValidationBadge(false);
+  setDebug("");
+  linOut.value = "(will appear here)";
+  pbnOut.value = "(will appear here)";
+  clickMsg.textContent = "No click yet.";
+  anchor = null;
+});
+
+copyLinBtn.addEventListener("click", async ()=>{
+  const t = linOut.value.trim();
+  if(!t || t.includes("will appear")) return;
+  try{
+    await navigator.clipboard.writeText(t);
+    appendDebug("LIN copied ✅");
+  }catch(e){
+    alert("Copy failed.");
+  }
+});
+
+dlLinBtn.addEventListener("click", ()=>{
+  const t = linOut.value.trim();
+  if(!t || t.includes("will appear")) return;
+  const blob = new Blob([t], {type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "hand.lin";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+
+/* Manual edits revalidate quickly */
+for(const seat of ["N","E","S","W"]){
+  for(const su of ["S","H","D","C"]){
+    table[seat][su].addEventListener("input", ()=>{
+      // mark seat as filled only if 13 cards
+      const tmp = {
+        S: normRanks(table[seat].S.value),
+        H: normRanks(table[seat].H.value),
+        D: normRanks(table[seat].D.value),
+        C: normRanks(table[seat].C.value),
+      };
+      const cnt = tmp.S.length + tmp.H.length + tmp.D.length + tmp.C.length;
+      filledSeats[seat] = (cnt===13);
+      refreshFilledUI();
+    });
+  }
+}
+
+/* init */
+setImageLoaded(false);
+refreshFilledUI();
+setValidationBadge(false);
+linOut.value="(will appear here)";
+pbnOut.value="(will appear here)";
+setDebug("");
 </script>
-
 </body>
 </html>
