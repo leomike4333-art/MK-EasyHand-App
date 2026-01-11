@@ -1,85 +1,539 @@
-<!DOCTYPE html>
-<html lang="it">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bridge Analyzer App</title>
-    <style>
-        :root { --primary: #2c3e50; --accent: #3498db; --solver: #e67e22; --success: #27ae60; --bg: #f4f7f6; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: var(--bg); margin: 0; padding: 15px; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: var(--primary); font-size: 1.5rem; margin-bottom: 20px; border-bottom: 3px solid var(--accent); pb: 10px; }
-        .board-card { border: 1px solid #eee; padding: 15px; margin-bottom: 12px; border-radius: 10px; background: #fff; transition: 0.3s; }
-        .board-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .board-num { font-size: 1.2rem; font-weight: bold; color: var(--primary); }
-        .par-badge { background: #fcf3cf; color: #b7950b; padding: 4px 8px; border-radius: 5px; font-size: 0.85rem; font-weight: bold; }
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn { border: none; padding: 10px; border-radius: 6px; color: white; text-align: center; text-decoration: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: block; }
-        .btn-bbo { background-color: var(--accent); }
-        .btn-solver { background-color: var(--solver); }
-        .copy-all { background-color: var(--primary); width: 100%; margin-bottom: 20px; padding: 15px; }
-        #copyNotice { display: none; text-align: center; color: var(--success); font-weight: bold; margin-bottom: 10px; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MK EasyHand App – Final (Auto OCR)</title>
+
+  <script src="https://unpkg.com/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --bd:#e5e7eb; --txt:#111827; --muted:#6b7280;
+      --ok:#16a34a; --bad:#dc2626; --blue:#2563eb; --dark:#111827;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--txt)}
+    header{background:#fff;border-bottom:1px solid var(--bd);padding:12px 16px}
+    h1{margin:0;font-size:22px;font-weight:900}
+    .sub{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.3}
+    .wrap{max-width:1100px;margin:0 auto;padding:14px 16px 24px}
+    .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-top:12px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    label{font-size:13px;color:var(--muted)}
+    select,input[type="file"],input[type="text"],input[type="number"]{
+      padding:9px 10px;border:1px solid var(--bd);border-radius:12px;background:#fff;font:inherit
+    }
+    button{
+      border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer;
+      color:#fff;background:var(--blue);display:inline-flex;gap:8px;align-items:center
+    }
+    button.dark{background:var(--dark)}
+    button.gray{background:#4b5563}
+    button.green{background:var(--ok)}
+    button.red{background:var(--bad)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:7px 10px;border:1px solid var(--bd);border-radius:999px;background:#fff;font-weight:800}
+    .ok{color:var(--ok)}
+    .bad{color:var(--bad)}
+    .small{font-size:12px;color:var(--muted)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+    .grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}
+    @media(max-width:980px){.grid2{grid-template-columns:1fr}}
+
+    .imgBox{border:1px solid var(--bd);border-radius:14px;overflow:hidden;background:#fff}
+    #imgPreview{display:none;width:100%;height:auto}
+
+    table{border-collapse:collapse;width:100%;background:#fff;border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+    th,td{border:1px solid var(--bd);padding:8px 10px;font-size:14px}
+    th{background:#f3f4f6;text-align:left}
+    td input{width:100%;padding:7px 8px;border-radius:10px;border:1px solid var(--bd)}
+    textarea{width:100%;min-height:110px;border:1px solid var(--bd);border-radius:12px;padding:10px;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+    details{margin-top:10px}
+    summary{cursor:pointer;color:var(--muted);font-size:13px}
+    .hint{border:1px dashed var(--bd);border-radius:12px;padding:10px;background:#fff;color:var(--muted);margin-top:10px}
+  </style>
 </head>
+
 <body>
+<header>
+  <h1>MK EasyHand App – Auto OCR</h1>
+  <div class="sub">
+    Paste/Upload → <b>Auto OCR</b> (tries to fill all 4 hands) → if not perfect, edit table manually → Generate LIN/PBN → Solver/BBO.
+  </div>
+</header>
 
-<div class="container">
-    <h1>🃟 Bridge Analyzer App</h1>
-    
-    <div id="copyNotice">✓ Codice Multi-Board copiato!</div>
-    <button class="btn copy-all" onclick="copyAllLin()">📋 Copia Tutto (per Bridge Solver Upload)</button>
+<div class="wrap">
+  <div class="card">
+    <div class="row">
+      <button id="pasteBtn">📋 Paste</button>
+      <input type="file" id="fileInput" accept="image/*" />
 
-    <div id="boardList"></div>
+      <label><b>Board</b></label>
+      <input type="number" id="boardNum" value="1" min="1" style="width:90px" />
+
+      <span class="pill">Image: <span id="imgState" class="bad">not loaded</span></span>
+      <span class="pill">Validation: <span id="valState" class="bad">KO ✖</span></span>
+
+      <button id="autoBtn" class="green" disabled>⚡ Auto OCR</button>
+      <button id="genBtn" class="dark">Generate LIN / PBN</button>
+      <button id="clearBtn" class="red">Clear</button>
+    </div>
+
+    <div class="hint">
+      <b>Idea “Failure Analysis”:</b> OCR = turbo. Tabella = controllo umano. Validazione = collaudo finale.
+      Se Auto OCR non è perfetto, correggi a mano e genera comunque un LIN conforme.
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="small"><b>Image</b></div>
+      <div class="imgBox" style="margin-top:8px">
+        <img id="imgPreview" alt="preview" />
+      </div>
+
+      <details>
+        <summary>Debug (optional)</summary>
+        <textarea id="debug" readonly></textarea>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="small"><b>Hand table (52 cards)</b></div>
+
+      <div style="overflow:auto;margin-top:10px">
+        <table>
+          <thead>
+            <tr><th>Seat</th><th>♠</th><th>♥</th><th>♦</th><th>♣</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>North</b></td>
+              <td><input id="N_S" class="mono"/></td>
+              <td><input id="N_H" class="mono"/></td>
+              <td><input id="N_D" class="mono"/></td>
+              <td><input id="N_C" class="mono"/></td>
+            </tr>
+            <tr>
+              <td><b>East</b></td>
+              <td><input id="E_S" class="mono"/></td>
+              <td><input id="E_H" class="mono"/></td>
+              <td><input id="E_D" class="mono"/></td>
+              <td><input id="E_C" class="mono"/></td>
+            </tr>
+            <tr>
+              <td><b>South</b></td>
+              <td><input id="S_S" class="mono"/></td>
+              <td><input id="S_H" class="mono"/></td>
+              <td><input id="S_D" class="mono"/></td>
+              <td><input id="S_C" class="mono"/></td>
+            </tr>
+            <tr>
+              <td><b>West</b></td>
+              <td><input id="W_S" class="mono"/></td>
+              <td><input id="W_H" class="mono"/></td>
+              <td><input id="W_D" class="mono"/></td>
+              <td><input id="W_C" class="mono"/></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="small" style="margin-top:8px">
+        Allowed ranks: <span class="mono">AKQJT98765432</span> (10 or T). Spaces ignored.
+      </div>
+
+      <div class="small" style="margin-top:10px"><b>LIN output</b></div>
+      <textarea id="linOut" readonly>(will appear here)</textarea>
+
+      <div class="small" style="margin-top:10px"><b>PBN output</b></div>
+      <textarea id="pbnOut" readonly>(will appear here)</textarea>
+
+      <div class="row" style="margin-top:10px">
+        <button id="copyLin" class="gray">Copy LIN</button>
+        <button id="dlLin" class="dark">Download .lin</button>
+        <button id="openBSOL" class="dark">Open Bridge Solver Online</button>
+        <button id="openBBO" class="dark">Open BBO Handviewer</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<textarea id="tempCopy" style="position:absolute; left:-9999px;"></textarea>
-
 <script>
-    const boards = [
-        { id: "11", par: "E/O 5D", lin: "qx|o11|pn|South,West,North,East|md|3SKT9HKQ632DA7C873,SQ8754H-DKQ943CKQ,SAJ2HJT8754D86CT2,S63HA9DJT52CAJ9654|sv|o|" },
-        { id: "12", par: "E/O 3SA", lin: "qx|o12|pn|South,West,North,East|md|4S6543H8542DTCQJ62,SKT97HAKJ96D64CA9,SAJ82HT73DKQ872CT,SQHQDAJ953CK87543|sv|n|" },
-        { id: "14", par: "N/S 6P", lin: "qx|o14|pn|South,West,North,East|md|2SQT763H9654DAJ8C3,S85HKT72D6543CKQT,SAKJ94HA8DKQT72C6,S2HQJ3D9CAJ987542|sv|n|" },
-        { id: "15", par: "N/S 3SA", lin: "qx|o15|pn|South,West,North,East|md|3ST42HQ865DAKQJCT7,SKJ863HK432D32C96,SAQ97HA97D7654CA4,S5HJTDT98CKQJ8532|sv|n|" },
-        { id: "16", par: "E/O 6C", lin: "qx|o16|pn|South,West,North,East|md|4S9543HK75DK963C84,SAK62HA92DJ85CKT9,SQJT7HQ8643D74CQ3,S8HJTDAQT2CAJ7652|sv|e|" },
-        { id: "17", par: "E/O 3SA", lin: "qx|o17|pn|South,West,North,East|md|1SJT843H9754D65C62,SAK976HAKQDT83CKT,SQHJT32DKQJCAQ987,S52H86DA9742CJ543|sv|o|" },
-        { id: "18", par: "N/S 4P", lin: "qx|o18|pn|South,West,North,East|md|2SQJ6HK943D84CKQ74,S7432HJT62DKT963C,SKT985HAQ8DAJCA96,SAH75DQ752CJT8532|sv|n|" },
-        { id: "19", par: "E/O 5Dx-1", lin: "qx|o19|pn|South,West,North,East|md|3SAQ95H9754DJ853C9,SJ742HAQ63DQT97C3,SKT863HKT2D2CAKT4,SHJ8DAK64CQJ87652|sv|e|" }
-    ];
+const $ = (id)=>document.getElementById(id);
 
-    const listContainer = document.getElementById('boardList');
+const pasteBtn = $("pasteBtn");
+const fileInput = $("fileInput");
+const imgPreview = $("imgPreview");
+const imgState = $("imgState");
+const valState = $("valState");
+const autoBtn = $("autoBtn");
+const genBtn = $("genBtn");
+const clearBtn = $("clearBtn");
+const debugBox = $("debug");
+const boardNum = $("boardNum");
 
-    boards.forEach(b => {
-        const card = document.createElement('div');
-        card.className = 'board-card';
-        // Creazione link Solver: codifica il LIN e lo appende all'URL di Bridge Solver Online
-        const solverUrl = `https://www.bridgewebs.com/cgi-bin/bwoc/bsol.cgi?lin=${b.lin}`;
-        const bboUrl = `https://www.bridgebase.com/tools/handviewer.html?lin=${b.lin}`;
+const linOut = $("linOut");
+const pbnOut = $("pbnOut");
+const copyLinBtn = $("copyLin");
+const dlLinBtn = $("dlLin");
+const openBSOLBtn = $("openBSOL");
+const openBBOBtn = $("openBBO");
 
-        card.innerHTML = `
-            <div class="board-header">
-                <span class="board-num">Mano ${b.id}</span>
-                <span class="par-badge">🎯 Par: ${b.par}</span>
-            </div>
-            <div class="btn-group">
-                <a href="${bboUrl}" target="_blank" class="btn btn-bbo">👁 Vedi BBO</a>
-                <a href="${solverUrl}" target="_blank" class="btn btn-solver">🧩 Analizza</a>
-            </div>
-        `;
-        listContainer.appendChild(card);
+const table = {
+  N:{S:$("N_S"),H:$("N_H"),D:$("N_D"),C:$("N_C")},
+  E:{S:$("E_S"),H:$("E_H"),D:$("E_D"),C:$("E_C")},
+  S:{S:$("S_S"),H:$("S_H"),D:$("S_D"),C:$("S_C")},
+  W:{S:$("W_S"),H:$("W_H"),D:$("W_D"),C:$("W_C")},
+};
+
+let img = null;
+
+function setDebug(txt){ debugBox.value = txt || ""; }
+function appendDebug(txt){ debugBox.value += (debugBox.value? "\n":"") + txt; debugBox.scrollTop = debugBox.scrollHeight; }
+
+function setImageLoaded(ok){
+  imgState.textContent = ok ? "loaded ✓" : "not loaded";
+  imgState.className = ok ? "ok" : "bad";
+  imgPreview.style.display = ok ? "block" : "none";
+  autoBtn.disabled = !ok;
+}
+
+function setValidationBadge(ok){
+  valState.textContent = ok ? "OK ✔" : "KO ✖";
+  valState.className = ok ? "ok" : "bad";
+}
+
+function normRanks(s){
+  if(!s) return "";
+  let t = String(s).toUpperCase().replace(/\s+/g,"");
+  t = t.replace(/10/g,"T");
+  t = t.replace(/[^AKQJT98765432]/g,"");
+  return t;
+}
+
+function readHands(){
+  const h = {};
+  for(const seat of ["N","E","S","W"]){
+    h[seat] = {
+      S: normRanks(table[seat].S.value),
+      H: normRanks(table[seat].H.value),
+      D: normRanks(table[seat].D.value),
+      C: normRanks(table[seat].C.value),
+    };
+    table[seat].S.value = h[seat].S;
+    table[seat].H.value = h[seat].H;
+    table[seat].D.value = h[seat].D;
+    table[seat].C.value = h[seat].C;
+  }
+  return h;
+}
+
+function validateHands(h){
+  const seen = new Map();
+  const errs = [];
+  let total = 0;
+
+  for(const seat of ["N","E","S","W"]){
+    const c = h[seat].S.length + h[seat].H.length + h[seat].D.length + h[seat].C.length;
+    total += c;
+    if(c !== 13) errs.push(`Seat ${seat}: ${c} cards (expected 13)`);
+  }
+  if(total !== 52) errs.push(`Total cards: ${total} (expected 52)`);
+
+  for(const seat of ["N","E","S","W"]){
+    for(const suit of ["S","H","D","C"]){
+      for(const r of h[seat][suit]){
+        const k = suit+r;
+        seen.set(k, (seen.get(k)||0)+1);
+      }
+    }
+  }
+  const dups = [...seen.entries()].filter(([k,v])=>v>1).map(([k,v])=>`${k}×${v}`);
+  if(dups.length) errs.push(`Duplicates: ${dups.slice(0,30).join(", ")}${dups.length>30?" ...":""}`);
+
+  return {ok: errs.length===0, errs};
+}
+
+function makePBN(h){
+  const N = `${h.N.S}.${h.N.H}.${h.N.D}.${h.N.C}`;
+  const E = `${h.E.S}.${h.E.H}.${h.E.D}.${h.E.C}`;
+  const S = `${h.S.S}.${h.S.H}.${h.S.D}.${h.S.C}`;
+  const W = `${h.W.S}.${h.W.H}.${h.W.D}.${h.W.C}`;
+  const bd = Number(boardNum.value)||1;
+  return [
+    `[Event "MK EasyHand"]`,
+    `[Board "${bd}"]`,
+    `[Dealer "N"]`,
+    `[Vulnerable "None"]`,
+    `[Deal "N:${N} ${E} ${S} ${W}"]`,
+    ``
+  ].join("\n");
+}
+
+function makeLIN(h){
+  const bd = Number(boardNum.value)||1;
+  const N = `${h.N.S}${h.N.H}${h.N.D}${h.N.C}`;
+  const E = `${h.E.S}${h.E.H}${h.E.D}${h.E.C}`;
+  const S = `${h.S.S}${h.S.H}${h.S.D}${h.S.C}`;
+  const W = `${h.W.S}${h.W.H}${h.W.D}${h.W.C}`;
+  return `pn|N,E,S,W|sv|o|bd|${bd}|md|3${N},${W},${E},${S}|`;
+}
+
+function updateOutputs(){
+  const h = readHands();
+  const v = validateHands(h);
+  setValidationBadge(v.ok);
+  if(!v.ok) appendDebug("Validation KO:\n- " + v.errs.join("\n- "));
+
+  const lin = makeLIN(h);
+  const pbn = makePBN(h);
+  linOut.value = lin;
+  pbnOut.value = pbn;
+
+  // Bridge Solver Online
+  const baseSolver = "https://dds.bridgewebs.com/bsol2/ddummy.htm";
+  const params = new URLSearchParams({
+    board: String(Number(boardNum.value)||1),
+    dealer: "N",
+    vul: "None",
+    north: `${h.N.S}.${h.N.H}.${h.N.D}.${h.N.C}`,
+    east:  `${h.E.S}.${h.E.H}.${h.E.D}.${h.E.C}`,
+    south: `${h.S.S}.${h.S.H}.${h.S.D}.${h.S.C}`,
+    west:  `${h.W.S}.${h.W.H}.${h.W.D}.${h.W.C}`,
+    analyse: "true"
+  });
+  openBSOLBtn.onclick = ()=> window.open(baseSolver + "?" + params.toString(), "_blank", "noopener");
+
+  // BBO Handviewer
+  const bboBase = "https://www.bridgebase.com/tools/handviewer.html";
+  openBBOBtn.onclick = ()=> window.open(bboBase + "?lin=" + encodeURIComponent(lin), "_blank", "noopener");
+}
+
+/* -------- Auto OCR core --------
+   We OCR the whole image text, normalize, then parse 4 "blocks"
+   using a simple-but-effective suit-token segmentation.
+   Works best when the screenshot contains the 4 hands with suit icons/letters.
+   If parsing is imperfect: user edits manually.
+-------------------------------- */
+function normalizeOcrText(t){
+  return String(t||"")
+    .replace(/\r/g,"")
+    .replace(/[♠]/g,"S ")
+    .replace(/[♥]/g,"H ")
+    .replace(/[♦]/g,"D ")
+    .replace(/[♣]/g,"C ")
+    .replace(/[|]/g," ")
+    .replace(/\u00A0/g," ")
+    .replace(/[^\S\n]+/g," ")
+    .toUpperCase();
+}
+
+function cleanRanksChunk(s){
+  return normRanks(s);
+}
+
+function parseHandsFromText(t){
+  // Strategy:
+  // - Convert suit symbols to S/H/D/C tokens
+  // - Extract sequences like: S <ranks> H <ranks> D <ranks> C <ranks>
+  // - Collect many candidates, then pick the best 4 that are closest to 13 cards
+  //
+  // Return bestGuess {N,E,S,W} if possible, else partial mapping.
+  const text = normalizeOcrText(t);
+
+  // Find all suit-line groups in the text
+  // Example group: "S AJ542 H K6543 D 64 C 9"
+  // We'll scan with regex that allows noise between tokens.
+  const re = /S\s*([AKQJT9876543210 ]{0,20})\s*H\s*([AKQJT9876543210 ]{0,20})\s*D\s*([AKQJT9876543210 ]{0,20})\s*C\s*([AKQJT9876543210 ]{0,20})/g;
+
+  const groups = [];
+  let m;
+  while((m = re.exec(text)) !== null){
+    const S = cleanRanksChunk(m[1]);
+    const H = cleanRanksChunk(m[2]);
+    const D = cleanRanksChunk(m[3]);
+    const C = cleanRanksChunk(m[4]);
+    const total = S.length+H.length+D.length+C.length;
+    // basic filter: ignore tiny junk groups
+    if(total >= 6){
+      groups.push({S,H,D,C,total, raw:m[0]});
+    }
+  }
+
+  // If we found many, choose 4 best by total closeness to 13 and longer content.
+  groups.sort((a,b)=>{
+    const sa = Math.abs(13-a.total)*10 - a.total; // lower better
+    const sb = Math.abs(13-b.total)*10 - b.total;
+    return sa - sb;
+  });
+
+  // pick up to 4 non-identical groups
+  const chosen = [];
+  const seenSig = new Set();
+  for(const g of groups){
+    const sig = `${g.S}|${g.H}|${g.D}|${g.C}`;
+    if(seenSig.has(sig)) continue;
+    seenSig.add(sig);
+    chosen.push(g);
+    if(chosen.length>=4) break;
+  }
+
+  // Map to seats:
+  // Without layout detection we cannot be 100% sure, so we map in order:
+  // N, E, S, W (user can swap by editing if needed).
+  const out = {
+    N: {S:"",H:"",D:"",C:""},
+    E: {S:"",H:"",D:"",C:""},
+    S: {S:"",H:"",D:"",C:""},
+    W: {S:"",H:"",D:"",C:""},
+  };
+
+  const seatOrder = ["N","E","S","W"];
+  for(let i=0;i<chosen.length;i++){
+    const seat = seatOrder[i];
+    out[seat] = {S:chosen[i].S, H:chosen[i].H, D:chosen[i].D, C:chosen[i].C};
+  }
+
+  return {out, chosen, groupsCount: groups.length};
+}
+
+async function autoOCR(){
+  if(!img) return;
+
+  autoBtn.disabled = true;
+  appendDebug("Auto OCR: starting…");
+
+  try{
+    const res = await Tesseract.recognize(img, "eng", {
+      tessedit_char_whitelist: "AKQJT9876543210SHDC♠♥♦♣NE SW.:|-",
+      preserve_interword_spaces: "1"
     });
 
-    function copyAllLin() {
-        const allText = boards.map(b => b.lin + "pg||").join('\n');
-        const temp = document.getElementById('tempCopy');
-        temp.value = allText;
-        temp.select();
-        document.execCommand('copy');
-        
-        const notice = document.getElementById('copyNotice');
-        notice.style.display = 'block';
-        setTimeout(() => notice.style.display = 'none', 2500);
-    }
-</script>
+    const raw = res?.data?.text || "";
+    appendDebug("OCR raw length: " + raw.length);
 
+    const parsed = parseHandsFromText(raw);
+    appendDebug(`Parsed groups: ${parsed.groupsCount}, chosen: ${parsed.chosen.length}`);
+    parsed.chosen.forEach((g,i)=>appendDebug(`G${i+1} total=${g.total} => S=${g.S} H=${g.H} D=${g.D} C=${g.C}`));
+
+    // Fill table
+    for(const seat of ["N","E","S","W"]){
+      table[seat].S.value = parsed.out[seat].S || "";
+      table[seat].H.value = parsed.out[seat].H || "";
+      table[seat].D.value = parsed.out[seat].D || "";
+      table[seat].C.value = parsed.out[seat].C || "";
+    }
+
+    updateOutputs();
+
+    if(valState.classList.contains("ok")){
+      appendDebug("Auto OCR: validation OK ✅");
+    }else{
+      appendDebug("Auto OCR: validation KO → manual edits needed.");
+    }
+
+  }catch(e){
+    appendDebug("Auto OCR ERROR: " + (e?.message||String(e)));
+    alert("Auto OCR error: " + e);
+  }finally{
+    autoBtn.disabled = false;
+  }
+}
+
+/* -------- Image loading -------- */
+async function loadFromBlob(blob){
+  const url = URL.createObjectURL(blob);
+  return new Promise((resolve,reject)=>{
+    const im = new Image();
+    im.onload = ()=>{
+      img = im;
+      imgPreview.src = url;
+      setImageLoaded(true);
+      setDebug("");
+      appendDebug(`Loaded image: ${im.naturalWidth}x${im.naturalHeight}`);
+      resolve();
+      URL.revokeObjectURL(url);
+    };
+    im.onerror = reject;
+    im.src = url;
+  });
+}
+
+pasteBtn.addEventListener("click", async ()=>{
+  try{
+    if(!navigator.clipboard || !navigator.clipboard.read){
+      alert("Paste not supported: use Upload.");
+      return;
+    }
+    const items = await navigator.clipboard.read();
+    for(const it of items){
+      const t = it.types.find(x=>x.startsWith("image/"));
+      if(t){
+        const blob = await it.getType(t);
+        await loadFromBlob(blob);
+        return;
+      }
+    }
+    alert("No image found in clipboard.");
+  }catch(e){
+    alert("Paste failed. Use Upload.\n\n" + e);
+  }
+});
+
+fileInput.addEventListener("change", async ()=>{
+  const f = fileInput.files && fileInput.files[0];
+  if(!f) return;
+  await loadFromBlob(f);
+});
+
+autoBtn.addEventListener("click", autoOCR);
+genBtn.addEventListener("click", updateOutputs);
+
+clearBtn.addEventListener("click", ()=>{
+  for(const seat of ["N","E","S","W"]){
+    for(const su of ["S","H","D","C"]){
+      table[seat][su].value = "";
+    }
+  }
+  setValidationBadge(false);
+  setDebug("");
+  linOut.value="(will appear here)";
+  pbnOut.value="(will appear here)";
+});
+
+copyLinBtn.addEventListener("click", async ()=>{
+  const t = linOut.value.trim();
+  if(!t || t.includes("will appear")) return;
+  try{
+    await navigator.clipboard.writeText(t);
+    appendDebug("LIN copied ✅");
+  }catch(e){
+    alert("Copy failed.");
+  }
+});
+
+dlLinBtn.addEventListener("click", ()=>{
+  const t = linOut.value.trim();
+  if(!t || t.includes("will appear")) return;
+  const blob = new Blob([t], {type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `board_${Number(boardNum.value)||1}.lin`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+
+setImageLoaded(false);
+setValidationBadge(false);
+linOut.value="(will appear here)";
+pbnOut.value="(will appear here)";
+setDebug("");
+</script>
 </body>
 </html>
