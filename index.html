@@ -1,53 +1,460 @@
-<!DOCTYPE html>
-<html lang="it">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Bridge Solver Loader</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        .board-card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
-        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
-        button:hover { background-color: #0056b3; }
-    </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>MK EasyHand – FIGB Base (Mobile Screenshot → LIN)</title>
+  <script src="https://unpkg.com/tesseract.js@5.1.0/dist/tesseract.min.js" defer></script>
+  <style>
+    :root{--bg:#f6f7fb;--card:#fff;--bd:#e5e7eb;--txt:#111827;--mut:#6b7280;--ok:#16a34a;--bad:#dc2626;--blue:#2563eb;--dark:#111827;}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    header{padding:14px 16px;border-bottom:1px solid var(--bd);background:#fff}
+    h1{margin:0;font-size:18px}
+    .sub{margin-top:4px;color:var(--mut);font-size:12px;line-height:1.35}
+    .wrap{max-width:1100px;margin:0 auto;padding:12px 16px 20px}
+    .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-top:12px}
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    button{border:0;border-radius:12px;padding:10px 12px;font-weight:800;cursor:pointer;color:#fff;background:var(--blue)}
+    button.dark{background:var(--dark)}
+    button.red{background:var(--bad)}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--bd);background:#fff;font-weight:800;font-size:12px}
+    .ok{color:var(--ok)}
+    .bad{color:var(--bad)}
+    input[type="file"],input[type="number"]{padding:9px 10px;border:1px solid var(--bd);border-radius:12px;background:#fff}
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+    .imgBox{border:1px dashed var(--bd);border-radius:14px;background:#fafafa;min-height:240px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    #imgPreview{display:none;max-width:100%;height:auto}
+    table{width:100%;border-collapse:collapse;border:1px solid var(--bd);border-radius:14px;overflow:hidden;background:#fff}
+    th,td{border:1px solid var(--bd);padding:8px 10px;font-size:13px}
+    th{background:#f3f4f6;text-align:left}
+    td input{width:100%;padding:7px 8px;border:1px solid var(--bd);border-radius:10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    textarea{width:100%;min-height:98px;border:1px solid var(--bd);border-radius:12px;padding:10px;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .small{font-size:12px;color:var(--mut)}
+    /* Mobile keypad modal */
+    #kbdModal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center;z-index:99}
+    #kbdSheet{width:min(560px,100%);background:#fff;border-radius:18px 18px 0 0;padding:12px;border:1px solid var(--bd)}
+    #kbdTitle{font-weight:900}
+    .kbdRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .kbtn{flex:1 0 calc(10% - 8px);min-width:44px;background:#111827;color:#fff;border-radius:12px;padding:12px 0;text-align:center;font-weight:900;user-select:none}
+    .kbtn.gray{background:#4b5563}
+    .kbtn.red{background:#dc2626}
+    .kbtn.green{background:#16a34a}
+    .kval{margin-top:10px;border:1px solid var(--bd);border-radius:12px;padding:10px;font-family:ui-monospace,monospace}
+  </style>
 </head>
 <body>
+<header>
+  <h1>MK EasyHand – FIGB Base</h1>
+  <div class="sub">
+    Target: <b>FIGB normal diagram</b> from <b>mobile screenshot</b>. Upload/Paste → Auto OCR → (optional) tap cells to edit without phone keyboard → Generate LIN.
+  </div>
+</header>
 
-    <h2>Analisi Smazzate BBO</h2>
-    
-    <div id="app">
-        <div class="board-card">
-            <strong>Board 4</strong> (Dealer: Ovest, Vul: Tutti)
-            <br><button onclick="openSolver(4, 'W', 'Both', 'Q8.QJ86.106.Q10765', 'AKJ6532.954.73.3', '1097.103.KJ95.AK82', '4.AK72.AQ842.J94')">Apri Bridge Solver</button>
-        </div>
+<div class="wrap">
+  <div class="card">
+    <div class="row">
+      <button id="pasteBtn">📋 Paste</button>
+      <input id="fileInput" type="file" accept="image/*"/>
+      <span class="pill">Image: <span id="imgState" class="bad">not loaded</span></span>
+      <span class="pill">Validation: <span id="valState" class="bad">KO</span></span>
+      <label class="small"><b>Board</b></label>
+      <input id="boardNum" type="number" min="1" value="1" style="width:90px"/>
+      <button id="ocrBtn" class="dark" disabled>⚡ Auto OCR (FIGB)</button>
+      <button id="genBtn" class="dark">Generate LIN/PBN</button>
+      <button id="clearBtn" class="red">Clear</button>
+      <span class="small" id="statusMsg"></span>
+    </div>
+  </div>
 
-        <div class="board-card">
-            <strong>Board 6</strong> (Dealer: Est, Vul: E/O)
-            <br><button onclick="openSolver(6, 'E', 'EW', 'J.532.QJ1042.Q872', 'Q109.QJ96.K.A9543', 'AK7642.7.A653.K10', '853.AK1084.987.J6')">Apri Bridge Solver</button>
-        </div>
-
-        <div class="board-card">
-            <strong>Board 1</strong> (Dealer: Nord, Vul: Nessuno)
-            <br><button onclick="openSolver(1, 'N', 'None', 'K3.KJ865.Q93.Q76', '74.A943.752.KJ94', 'A108.Q107.AK6.A1083', 'QJ9652.2.J1084.52')">Apri Bridge Solver</button>
-        </div>
+  <div class="grid">
+    <div class="card">
+      <div class="small"><b>Image</b></div>
+      <div class="imgBox" style="margin-top:8px">
+        <img id="imgPreview" alt="preview"/>
+        <div id="imgHint" class="small">Paste/Upload a FIGB screenshot.</div>
+      </div>
+      <div class="small" style="margin-top:8px">
+        Tip: screenshot “tight” around the diagram. No allungati.
+      </div>
     </div>
 
-    <script>
-    function openSolver(num, dealer, vul, w, n, e, s) {
-        const baseSolver = "https://dds.bridgewebs.com/bsol2/ddummy.htm";
-        
-        const params = new URLSearchParams({
-            board: String(num),
-            dealer: dealer,
-            vul: vul,
-            north: n,
-            east:  e,
-            south: s,
-            west:  w,
-            analyse: "true"
-        });
+    <div class="card">
+      <div class="small"><b>Hand table</b> (tap a cell on phone to edit)</div>
+      <div style="overflow:auto;margin-top:10px">
+        <table>
+          <thead><tr><th>Seat</th><th>♠</th><th>♥</th><th>♦</th><th>♣</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
 
-        window.open(`${baseSolver}?${params.toString()}`, '_blank');
+      <div class="small" style="margin-top:10px"><b>LIN</b></div>
+      <textarea id="linOut" readonly></textarea>
+
+      <div class="small" style="margin-top:10px"><b>PBN</b></div>
+      <textarea id="pbnOut" readonly></textarea>
+    </div>
+  </div>
+</div>
+
+<div id="kbdModal">
+  <div id="kbdSheet">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <div id="kbdTitle">Edit</div>
+        <div class="small">Tap ranks to add. Backspace removes last. Done closes.</div>
+      </div>
+      <div class="kbtn red" id="kbdClose" style="flex:0 0 auto;min-width:80px">Done</div>
+    </div>
+    <div class="kval" id="kbdValue"></div>
+    <div class="kbdRow" id="kbdRow1"></div>
+    <div class="kbdRow" id="kbdRow2"></div>
+    <div class="kbdRow">
+      <div class="kbtn gray" id="kbdBksp">⌫</div>
+      <div class="kbtn gray" id="kbdClear">Clear</div>
+      <div class="kbtn green" id="kbdSave">Save</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const SEATS = ["N","E","S","W"];
+  const SUITS = ["S","H","D","C"];
+  const RANKS = "AKQJT98765432";
+
+  const tbody = document.getElementById("tbody");
+  const pasteBtn = document.getElementById("pasteBtn");
+  const fileInput = document.getElementById("fileInput");
+  const imgPreview = document.getElementById("imgPreview");
+  const imgHint = document.getElementById("imgHint");
+  const imgState = document.getElementById("imgState");
+  const valState = document.getElementById("valState");
+  const boardNum = document.getElementById("boardNum");
+  const ocrBtn = document.getElementById("ocrBtn");
+  const genBtn = document.getElementById("genBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const statusMsg = document.getElementById("statusMsg");
+  const linOut = document.getElementById("linOut");
+  const pbnOut = document.getElementById("pbnOut");
+
+  const isTouch = matchMedia("(pointer:coarse)").matches;
+
+  const inputs = {};
+  function buildTable(){
+    tbody.innerHTML = "";
+    for(const seat of SEATS){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td><b>${seat}</b></td>` + SUITS.map(s=>`<td><input id="${seat}_${s}" inputmode="none" /></td>`).join("");
+      tbody.appendChild(tr);
+      inputs[seat] = {};
+      for(const suit of SUITS){
+        const inp = document.getElementById(`${seat}_${suit}`);
+        inputs[seat][suit] = inp;
+        if(isTouch){
+          inp.readOnly = true;
+          inp.addEventListener("click", () => openKeypad(seat, suit));
+        }else{
+          inp.addEventListener("input", () => { normalizeAll(); updateOutputs(false); });
+        }
+      }
     }
-    </script>
+  }
+
+  function setImgLoaded(ok){
+    imgState.textContent = ok ? "loaded ✓" : "not loaded";
+    imgState.className = ok ? "ok" : "bad";
+    ocrBtn.disabled = !ok;
+  }
+
+  function setValidation(ok){
+    valState.textContent = ok ? "OK ✓" : "KO";
+    valState.className = ok ? "ok" : "bad";
+  }
+
+  function normRanks(s){
+    if(!s) return "";
+    let t = String(s).toUpperCase().replace(/10/g,"T");
+    t = t.replace(new RegExp(`[^${RANKS}]`,"g"), "");
+    let out = "";
+    for(const ch of t) if(!out.includes(ch)) out += ch;
+    return out;
+  }
+
+  function normalizeAll(){
+    for(const seat of SEATS){
+      for(const suit of SUITS){
+        inputs[seat][suit].value = normRanks(inputs[seat][suit].value);
+      }
+    }
+  }
+
+  function gather(){
+    const h = {};
+    for(const seat of SEATS){
+      h[seat] = {};
+      for(const suit of SUITS) h[seat][suit] = normRanks(inputs[seat][suit].value);
+    }
+    return h;
+  }
+
+  function validate(h){
+    const seen = new Map();
+    let total = 0;
+    const errs = [];
+    for(const seat of SEATS){
+      const c = h[seat].S.length + h[seat].H.length + h[seat].D.length + h[seat].C.length;
+      total += c;
+      if(c !== 13) errs.push(`${seat}: ${c}/13`);
+    }
+    if(total !== 52) errs.push(`Total: ${total}/52`);
+    for(const seat of SEATS){
+      for(const suit of SUITS){
+        for(const r of h[seat][suit]){
+          const k = suit+r;
+          seen.set(k,(seen.get(k)||0)+1);
+        }
+      }
+    }
+    const dups = [...seen.entries()].filter(([k,v])=>v>1).map(([k,v])=>k);
+    if(dups.length) errs.push(`Duplicates: ${dups.join(", ")}`);
+    return {ok: errs.length===0, errs};
+  }
+
+  function makeLIN(h){
+    const bd = Number(boardNum.value)||1;
+    const hand = (seat) => `${h[seat].S}.${h[seat].H}.${h[seat].D}.${h[seat].C}.`;
+    return `pn|N,E,S,W|sv|o|bd|${bd}|md|1${hand("N")}${hand("E")}${hand("S")}${hand("W")}|`;
+  }
+
+  function makePBN(h){
+    const bd = Number(boardNum.value)||1;
+    const hs = (seat)=>`${h[seat].S}.${h[seat].H}.${h[seat].D}.${h[seat].C}`;
+    return [
+      `[Event "MK EasyHand FIGB"]`,
+      `[Board "${bd}"]`,
+      `[Dealer "N"]`,
+      `[Vulnerable "None"]`,
+      `[Deal "N:${hs("N")} ${hs("E")} ${hs("S")} ${hs("W")}"]`,
+      ``
+    ].join("\\n");
+  }
+
+  function updateOutputs(showMsg=true){
+    normalizeAll();
+    const h = gather();
+    const v = validate(h);
+    setValidation(v.ok);
+    linOut.value = makeLIN(h);
+    pbnOut.value = makePBN(h);
+    if(showMsg){
+      statusMsg.textContent = v.ok ? "Ready ✓" : ("Fix: " + v.errs.join(" | "));
+    }
+  }
+
+  clearBtn.addEventListener("click", () => {
+    for(const seat of SEATS) for(const suit of SUITS) inputs[seat][suit].value = "";
+    linOut.value = ""; pbnOut.value=""; statusMsg.textContent="";
+    setValidation(false);
+  });
+
+  genBtn.addEventListener("click", () => updateOutputs(true));
+
+  let img = null;
+  let canvas = document.createElement("canvas");
+  let ctx = canvas.getContext("2d", { willReadFrequently:true });
+
+  function loadFromBlob(blob){
+    return new Promise((resolve,reject)=>{
+      const url = URL.createObjectURL(blob);
+      const im = new Image();
+      im.onload = () => {
+        img = im;
+        canvas.width = im.naturalWidth;
+        canvas.height = im.naturalHeight;
+        ctx.drawImage(im,0,0);
+        imgPreview.src = url;
+        imgPreview.style.display="block";
+        imgHint.style.display="none";
+        setImgLoaded(true);
+        statusMsg.textContent = `Image ${im.naturalWidth}×${im.naturalHeight}`;
+        resolve();
+        URL.revokeObjectURL(url);
+      };
+      im.onerror = reject;
+      im.src = url;
+    });
+  }
+
+  pasteBtn.addEventListener("click", async ()=>{
+    try{
+      if(!navigator.clipboard?.read){ alert("Paste not supported. Use Upload."); return; }
+      const items = await navigator.clipboard.read();
+      for(const it of items){
+        const t = it.types.find(x=>x.startsWith("image/"));
+        if(t){
+          const blob = await it.getType(t);
+          await loadFromBlob(blob);
+          return;
+        }
+      }
+      alert("No image in clipboard.");
+    }catch(e){
+      alert("Paste failed. Use Upload.");
+    }
+  });
+
+  fileInput.addEventListener("change", async ()=>{
+    const f = fileInput.files?.[0];
+    if(!f) return;
+    await loadFromBlob(f);
+  });
+
+  function relRect(rx1,ry1,rx2,ry2){
+    const W=canvas.width,H=canvas.height;
+    const x=Math.max(0,Math.floor(rx1*W));
+    const y=Math.max(0,Math.floor(ry1*H));
+    const w=Math.max(1,Math.floor((rx2-rx1)*W));
+    const h=Math.max(1,Math.floor((ry2-ry1)*H));
+    return {x,y,w,h};
+  }
+  function crop(rect){
+    const c=document.createElement("canvas");
+    c.width=rect.w; c.height=rect.h;
+    const cctx=c.getContext("2d");
+    cctx.drawImage(canvas, rect.x,rect.y,rect.w,rect.h, 0,0,rect.w,rect.h);
+    return c;
+  }
+
+  function normalizeOcrText(t){
+    return String(t||"")
+      .replace(/[♠]/g,"S ")
+      .replace(/[♥]/g,"H ")
+      .replace(/[♦]/g,"D ")
+      .replace(/[♣]/g,"C ")
+      .toUpperCase();
+  }
+
+  function parseSuitGroup(txt){
+    const t = normalizeOcrText(txt).replace(/\\s+/g," ");
+    const m = /S\\s*([AKQJT9876543210 ]*)\\s*H\\s*([AKQJT9876543210 ]*)\\s*D\\s*([AKQJT9876543210 ]*)\\s*C\\s*([AKQJT9876543210 ]*)/i.exec(t);
+    if(!m){
+      const lines = String(txt||"").split(/\\r?\\n/).map(s=>normRanks(s)).filter(Boolean);
+      return {S:lines[0]||"",H:lines[1]||"",D:lines[2]||"",C:lines[3]||""};
+    }
+    return {S:normRanks(m[1]),H:normRanks(m[2]),D:normRanks(m[3]),C:normRanks(m[4])};
+  }
+
+  async function ocrCanvas(c, label){
+    if(!window.Tesseract) throw new Error("Tesseract not loaded yet. Wait 2–3 seconds and retry.");
+    statusMsg.textContent = label;
+    const res = await Tesseract.recognize(c, "eng", {
+      tessedit_char_whitelist: "AKQJT9876543210SHDC♠♥♦♣ \\n",
+      preserve_interword_spaces: "1"
+    });
+    return res?.data?.text || "";
+  }
+
+  function seatRectsFIGB(){
+    return {
+      N: relRect(0.31, 0.12, 0.69, 0.34),
+      W: relRect(0.05, 0.33, 0.33, 0.57),
+      E: relRect(0.67, 0.33, 0.95, 0.57),
+      S: relRect(0.31, 0.58, 0.69, 0.82),
+    };
+  }
+
+  async function autoOcrFIGB(){
+    if(!img) return;
+    ocrBtn.disabled = true;
+    try{
+      for(const seat of SEATS) for(const suit of SUITS) inputs[seat][suit].value = "";
+      const rects = seatRectsFIGB();
+      for(const seat of ["N","E","S","W"]){
+        const c = crop(rects[seat]);
+        const txt = await ocrCanvas(c, `OCR ${seat}…`);
+        const g = parseSuitGroup(txt);
+        inputs[seat].S.value = g.S;
+        inputs[seat].H.value = g.H;
+        inputs[seat].D.value = g.D;
+        inputs[seat].C.value = g.C;
+        updateOutputs(false);
+      }
+      updateOutputs(true);
+      statusMsg.textContent = (valState.classList.contains("ok") ? "Auto OCR OK ✓" : "Auto OCR done — check/fix the table");
+    }catch(e){
+      statusMsg.textContent = "OCR error: " + (e?.message||String(e));
+      alert("OCR error: " + (e?.message||String(e)));
+    }finally{
+      ocrBtn.disabled = false;
+    }
+  }
+
+  ocrBtn.addEventListener("click", autoOcrFIGB);
+
+  // Mobile keypad
+  const kbdModal = document.getElementById("kbdModal");
+  const kbdTitle = document.getElementById("kbdTitle");
+  const kbdValue = document.getElementById("kbdValue");
+  const kbdRow1 = document.getElementById("kbdRow1");
+  const kbdRow2 = document.getElementById("kbdRow2");
+  const kbdClose = document.getElementById("kbdClose");
+  const kbdBksp = document.getElementById("kbdBksp");
+  const kbdClear = document.getElementById("kbdClear");
+  const kbdSave = document.getElementById("kbdSave");
+
+  let editSeat=null, editSuit=null, editBuffer="";
+
+  function openKeypad(seat, suit){
+    editSeat = seat; editSuit = suit;
+    editBuffer = inputs[seat][suit].value || "";
+    kbdTitle.textContent = `Edit ${seat} ${suit}`;
+    kbdValue.textContent = editBuffer || "(empty)";
+    kbdModal.style.display = "flex";
+  }
+  function closeKeypad(){
+    kbdModal.style.display = "none";
+    editSeat=null; editSuit=null; editBuffer="";
+  }
+  function renderKbd(){ kbdValue.textContent = editBuffer || "(empty)"; }
+  function addRank(r){ if(!editBuffer.includes(r)) editBuffer += r; renderKbd(); }
+  function backspace(){ editBuffer = editBuffer.slice(0,-1); renderKbd(); }
+  function clearBuf(){ editBuffer = ""; renderKbd(); }
+  function saveBuf(){
+    if(editSeat && editSuit){
+      inputs[editSeat][editSuit].value = normRanks(editBuffer);
+      updateOutputs(false);
+    }
+    closeKeypad();
+  }
+
+  function buildKeypad(){
+    const a = ["A","K","Q","J","T"];
+    const b = ["9","8","7","6","5","4","3","2"];
+    const mk = (ch) => {
+      const d = document.createElement("div");
+      d.className="kbtn";
+      d.textContent=ch;
+      d.addEventListener("click", ()=>addRank(ch));
+      return d;
+    };
+    a.forEach(ch=>kbdRow1.appendChild(mk(ch)));
+    b.forEach(ch=>kbdRow2.appendChild(mk(ch)));
+  }
+
+  kbdClose.addEventListener("click", closeKeypad);
+  kbdBksp.addEventListener("click", backspace);
+  kbdClear.addEventListener("click", clearBuf);
+  kbdSave.addEventListener("click", saveBuf);
+  kbdModal.addEventListener("click", (e)=>{ if(e.target===kbdModal) closeKeypad(); });
+
+  buildTable();
+  buildKeypad();
+  setImgLoaded(false);
+  setValidation(false);
+})();
+</script>
 </body>
 </html>
